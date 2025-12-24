@@ -1,0 +1,61 @@
+<%
+        -- base64解码
+        local base_tmp='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
+        local function base64_dec(data)
+                data = string.gsub(data, '[^'..base_tmp..'=]', '')
+                return (data:gsub('.', function(x)
+                if (x == '=') then return '' end
+                local r,f='',(base_tmp:find(x)-1)
+                for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+                return r;
+                end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+                if (#x ~= 8) then return '' end
+                local c=0
+                for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+                        return string.char(c)
+                end))
+        end
+        -- URL解码
+        local function urlDecode(s)
+                s = string.gsub(s, '%%(%x%x)', function(h)
+                return string.char(tonumber(h, 16)) end)
+                return s
+        end
+    local xxx_path = luci.sys.exec("echo -n $(uci get lyq.xxx_path)");
+    if xxx_path=="" then  xxx_path="/data" end
+    local mac = luci.http.formvalue ("mac")
+
+    if mac=="stop_zerotier" then
+        luci.http.write('‘前置标记’')
+        local rstr = luci.sys.exec(xxx_path.."/xxxcon/xxxbox zerotier stop")
+        luci.http.write("完成")
+        luci.http.close()
+    end
+
+    if mac=="restart_zerotier" then
+        luci.http.write('‘前置标记’')
+        local rstr = luci.sys.exec(xxx_path.."/xxxcon/xxxbox zerotier restart")
+        luci.http.write("完成")
+        luci.http.close()
+    end
+
+    if mac=="join_zerotier" then
+        local url = luci.http.formvalue ("url")
+        url = urlDecode(base64_dec(url))
+        luci.http.write('‘前置标记’')
+        local rstr = luci.sys.exec("source /etc/profile >/dev/null && zerotier-cli join "..url.." > /tmp/tmp/zerotier_tmp2")
+        rstr = luci.sys.exec("cat /tmp/tmp/zerotier_tmp2 | grep '200 join OK' >/dev/null && echo 加入成功 || 配置失败")
+        luci.http.write(rstr)
+        luci.http.close()
+    end
+
+    if mac=="leave_zerotier" then
+        local url = luci.http.formvalue ("url")
+        url = urlDecode(base64_dec(url))
+        luci.http.write('‘前置标记’')
+        local rstr = luci.sys.exec("source /etc/profile >/dev/null && zerotier-cli leave "..url.." > /tmp/tmp/zerotier_tmp2")
+        rstr = luci.sys.exec("cat /tmp/tmp/zerotier_tmp2 | grep '200 leave OK' >/dev/null && echo 断开成功 || 配置失败")
+        luci.http.write(rstr)
+        luci.http.close()
+    end
+%>

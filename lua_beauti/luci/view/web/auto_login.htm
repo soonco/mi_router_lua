@@ -1,0 +1,28 @@
+//sysauth_box_b
+<%
+    local xxx_path = luci.sys.exec("echo -n $(uci get lyq.xxx_path)");
+    if xxx_path=="" then  xxx_path="/data" end
+    local machtm2 = luci.sys.exec("cat "..xxx_path.."/xxxweb/xxx.json")
+    machtm2 = string.gsub(machtm2, "\r\n", "!@.@!")
+    machtm2 = string.gsub(machtm2, "\n", "!@.@!")
+    if mac == "00:00:00:00:00:00" then
+        mac = luci.sys.exec("cat /tmp/dhcp.leases | grep -n ' "..remote_addr.." ' | awk '{print $2}' | tr -d '\\n'")
+    end
+    local token=""
+    mac='"class":"mac","data":"'..mac..'",'
+    if string.find(machtm2, mac) then
+        local password = luci.sys.exec("uci get account.common.admin")
+        local model = luci.sys.exec("uci get lyq.model")
+        password = string.gsub(password, "\n", "")
+        model = string.gsub(model, "\n", "")
+        model = string.gsub(model, "\r", "")
+        if model == "7000" then sha="256" else sha="1" end
+        -- 登录安全验证
+
+        luci.http.write("var nonce = Encrypt.init();var oldPwd = CryptoJS.SHA"..sha.."(nonce + '"..password.."').toString().toString();var param = {username: 'admin',password: oldPwd,logtype: 2,nonce: nonce};$.pub('loading:start');var url = '"..luci.dispatcher.build_url("api", "xqsystem", "login").."';$.post( url, param, function( rsp ) {$.pub('loading:stop');var rsp = $.parseJSON( rsp ); if ( rsp.code == 0 ) {var redirect,token = rsp.token; if ( /action=wan/.test(location.href) ) { redirect = buildUrl('wan', token);} else if ( /action=lannetset/.test(location.href) ) { redirect = buildUrl('lannetset', token);} else {  redirect = rsp.url; } window.location.href = redirect; } else {   pwdErrorCount ++; var errMsg = '预设密码错误，请登录后修改'; Valid.fail( document.getElementById('password'), errMsg, false);}});")
+        --post测试无法通过验证
+        --json = luci.sys.exec(xxx_path.."/xxxcon/xxxbox login_web "..mac)
+    end
+%>
+//sysauth_box_b
+

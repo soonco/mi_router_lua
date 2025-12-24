@@ -1,0 +1,15 @@
+<%
+local mac = luci.http.formvalue ("mac")
+local prot = 37661
+luci.sys.exec("kill $(ps | grep ttyd | sort -r | grep -v grep | grep "..prot.." | head -n 1 | awk {'print $1'})")
+luci.sys.exec("kill $(ps | grep ttyd | sort -r | grep -v grep | grep "..prot.." | head -n 1 | awk {'print $1'})")
+if mac=="template_run" then
+    -- 开启ttyd
+    luci.sys.exec("source /etc/profile && sh -c \"/tmp/xxxbox_tmp/xxx_ttyd -W -a -p "..prot.." sh $(uci get lyq.xxx_path)/xxxbox/template/call.sh\" > /dev/null 2>&1 &")
+    local code = luci.sys.exec("[ -n \"$(ps | grep ttyd | sort -r | grep -v grep | grep "..prot.." | head -n 1 | awk {'print $1'})\" ] && echo -n 1.准备终端异常")
+    a, b = string.find(code,"异常")
+    if a then statu=0 else statu=1 end
+    luci.http.write('{"statu":'..statu..',"prot":'..prot..',"info":"'..code..'"}')
+    luci.http.close()
+end
+%>

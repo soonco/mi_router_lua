@@ -1,0 +1,72 @@
+<!-- 加载box.xxx -->
+<%include("web/inc/xxx.htm")%>
+<%if luci.http.formvalue("xxx")=="box" then include("web/inc/xxx.js") end%>
+<%include("web/inc/xxx.css")%>
+<!-- <%:netMode header=%><%=netMode%> -->
+<%
+    issd = luci.sys.exec("echo `/bin/df |/bin/grep /dev/sd >/dev/null && echo '1' || echo '0'`")
+    local XQFunction = require("xiaoqiang.common.XQFunction")
+    -- ap model
+    local netMode = 0
+    local MeshType = 0
+
+    local mode = XQFunction.getNetMode()
+    if mode == "lanapmode" then
+        netMode = 2
+    elseif mode == "wifiapmode" then
+        netMode = 1
+    elseif mode == "whc_cap" then
+        --mesh主设备
+        netMode = 0
+    elseif mode == "whc_re" then
+         --mesh从设备
+        netMode = 3
+    end
+    %>
+<div id="nav">
+    <%if netMode == 0 then%>
+    <ul>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/home") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "home")%>"><%:路由状态%></a></li>
+        <%if issd == "1\n" then%><li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/store") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "store")%>"><%:存储功能%></a></li><%end%>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/setting") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "setting", "wifi")%>"><%:常用设置%></a></li>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/prosetting") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web","prosetting","qos")%>"><%:高级设置%></a></li>
+        <li style="margin-right: 30px;<%=luci.sys.exec("echo `/bin/netstat -anp |/bin/grep ':9001 ' &&echo ''|| echo 'display:none;'`")%>" <%if string.find(REQUEST_URI, "/docker") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web","docker")%>\">docker</a></li>
+        <li style="margin-right: 30px;pointer-events: none;" id="openxxxbox" <%if string.find(REQUEST_URI, "/box") then%>class="active"<%end%>><a href="#" id="box" onclick="openbox(this)">加载功能</a></li>
+    </ul>
+    <%elseif netMode==3 then%>
+    <ul>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/home") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "home")%>"><%:子Mesh状态%></a></li>
+        <%if issd == "1\n" then%><li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/store") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "store")%>"><%:存储功能%></a></li><%end%>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/apsetting") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "apsetting", "upgrade")%>"><%:子Mesh设置%></a></li>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/prosetting") then%>class="active"<%end%> style="margin-right: 70px"><a href="<%=luci.dispatcher.build_url("web","prosetting")%>"><%:高级设置%></a></li>
+        <li style="margin-right: 30px;<%=luci.sys.exec("echo `/bin/netstat -anp |/bin/grep ':9001 ' &&echo ''|| echo 'display:none;'`")%>" <%if string.find(REQUEST_URI, "/docker") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web","docker")%>\">docker</a></li>
+        <li style="margin-right: 30px;pointer-events: none;" id="openxxxbox" <%if string.find(REQUEST_URI, "/box") then%>class="active"<%end%>><a href="#" id="box" onclick="openbox(this)">加载功能</a></li>
+    </ul>
+    <%else%>
+    <ul>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/home") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "home")%>"><%:中继状态%></a></li>
+        <%if issd == "1\n" then%><li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/store") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "store")%>"><%:存储功能%></a></li><%end%>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/apsetting") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web", "apsetting", "wifi")%>"><%:中继设置%></a></li>
+        <li style="margin-right: 30px;" <%if string.find(REQUEST_URI, "/prosetting") then%>class="active"<%end%> style="margin-right: 70px"><a href="<%=luci.dispatcher.build_url("web","prosetting")%>"><%:高级设置%></a></li>
+        <li style="margin-right: 30px;<%=luci.sys.exec("echo `/bin/netstat -anp |/bin/grep ':9001 ' &&echo ''|| echo 'display:none;'`")%>" <%if string.find(REQUEST_URI, "/docker") then%>class="active"<%end%>><a href="<%=luci.dispatcher.build_url("web","docker")%>\">docker</a></li>
+        <li style="margin-right: 30px;pointer-events: none;" id="openxxxbox" <%if string.find(REQUEST_URI, "/box") then%>class="active"<%end%>><a href="#" id="box" onclick="openbox(this)">加载功能</a></li>
+    </ul>
+    <%end%>
+</div>
+
+<script type="text/javascript">
+    web_url="<%=REQUEST_URI%>"
+    web_url=web_url.split('/web/')[0]+'/web/docker?xxx=box'
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', web_url, true);
+    xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+        var script = document.createElement('script');
+        scrtext=xhr.responseText.split("//xxx.js start")[1].split("//xxx.js end")[0]
+        script.text = scrtext;
+        document.body.appendChild(script);
+    }
+    };
+    xhr.send();
+</script>
+

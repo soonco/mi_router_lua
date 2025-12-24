@@ -1,0 +1,19 @@
+    update=0;
+    function samba_set_butt_click(obj){
+        if (update==0){
+            update=1;
+            if (obj.value=="保存"){
+                pass=obj.parentNode['pass'].value
+                ajaxPost('<%=REQUEST_URI%>?mac=samba_update&pass='+btoa(encodeURIComponent(pass)), {}, function(r) {
+                    alert(r)
+                    update=0;
+                })
+            }else if(obj.value=="重启"){
+                ajaxPost('<%=REQUEST_URI%>?mac=samba_start', {},function(r){
+                    alert(r);update_xxx_box("main_setlist");
+                    update=0;
+            })
+        }else{alert("繁忙中,请等待...");}
+        }
+    }
+

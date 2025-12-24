@@ -1,0 +1,85 @@
+<%
+        local flag = true
+        local run  = true
+        local fd   = nil
+        luci.http.setfilehandler(
+                function(field, chunk, eof)
+                        if not field or not run then return end
+                        if flag then
+                                luci.http.write("上传中")
+                                flag = false
+                        end
+                        local path = "/tmp/tmp/update-tmp-"..field.file
+                        if not fd then
+                                fd = io.open(path, "w")
+                        end
+                        fd:write(chunk)
+                        if eof and fd then
+                                fd:close()
+                                fd = nil
+                                a, b = string.find(field.file, ".tar")
+                                is_tar=false
+                                if b == string.len(field.file) then is_tar=true end
+                                mnt=luci.http.formvalue("up_path")
+                                -- 将上传的文件保存到根目录下
+                                if (field.file== "xxx_install") then
+                                        path2 = "/tmp/tmp/xxx_install"
+                                elseif (mnt== "sda") and is_tar then
+                                        path2 = "/mnt/sda/mi_box/"..field.file
+                                elseif (mnt== "mtd") and is_tar then
+                                        path2 = "/mnt/mtd/box/"..field.file
+                                elseif (mnt== "docker") and is_tar then
+                                        name=luci.http.formvalue("name")
+                                        path2 = "/mnt/sda/mi_docker/"..name..".tar"
+                                else
+                                        path2 = "/tmp/tmp/update-"..os.time(date).."-"..field.file
+                                end
+                                os.execute("mv "..path.." "..path2)
+                                luci.http.write("上传成功！")
+                        end
+                end
+        )
+        if luci.http.formvalue("mac") == "upload_file" then
+                return
+        end
+
+        -- 定义全局变量1
+        local XQLanWanUtil2 = require("xiaoqiang.util.XQLanWanUtil")
+        local ip_tmp = XQLanWanUtil2.getLanIp()
+        local mac = luci.http.formvalue ("mac")
+        local xxx_path = luci.sys.exec("echo -n $(uci get lyq.xxx_path)");
+        if xxx_path=="" then  xxx_path="/data" end
+
+        luci.sys.exec(xxx_path.."/xxxcon/xxxbox mtdb_disk_mount");
+        luci.sys.exec(xxx_path.."/xxxcon/xxxbox sda_disk_mount");
+        luci.sys.exec(xxx_path.."/xxxcon/xxxbox auto_start");
+
+        --上传文件(废弃)
+        if mac=="upload_file" then
+                luci.http.write("上传成功")
+                file_text=luci.http.formvalue("upload_file")
+                file_path="/tmp/tmp/csssss"
+                local file=io.open(file_path,"w")
+                io.output(file)
+                io.write(file_text)
+                io.close()
+                luci.http.close()
+        end
+
+        code = luci.http.formvalue("code")
+        user = luci.http.formvalue("user")
+        key = luci.http.formvalue("key")
+        if code == "activate" then
+                if user == luci.sys.exec("echo -n $(bdata get SN)") then
+                        luci.http.write(luci.sys.exec(xxx_path.."/xxxcon/xxxbox activate "..key))
+                end
+        end
+
+        -- 加载lua
+                xxx_web_arr = luci.sys.exec(xxx_path.."/xxxcon/xxxapi xxx_web lua")
+                xxx_web_arr = string.split(xxx_web_arr, '\n')
+                for i = 1, #xxx_web_arr-1, 1 do
+                        include(xxx_web_arr[i])
+                end
+
+%>

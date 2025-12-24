@@ -1,0 +1,9 @@
+<div id="wol_box">
+    <form action="#" onsubmit="return false;" method="post">
+        <p>wol 客户端配置信息：</p>
+        <textarea placeholder="客户端配置" id="wol_text" style="width: 700px;height: 200px;" ><%=luci.sys.exec("cat $(uci get lyq.xxx_path)/xxxbox/wol/config.yaml")%></textarea>
+        <br>
+        <input type="submit" value="保存" id="save_wol" onclick="up_wol(this)">
+        <input type="submit" value="重启" id="restart_wol" onclick="up_wol(this)">
+    </form>
+</div>

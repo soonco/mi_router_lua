@@ -1,0 +1,1969 @@
+//xxx.js start
+    document.getElementById('openxxxbox').firstChild.innerHTML="扩展功能"
+    document.getElementById('openxxxbox').style.pointerEvents="all";
+    <%local xxx_path = luci.sys.exec("echo -n $(uci get lyq.xxx_path)");if xxx_path=="" then  xxx_path="/data" end%>
+    web_url="<%=REQUEST_URI%>"
+    web_url=web_url.split('/web/')[0]+"/api/xxxapi/"
+    //显示常用脚本命令
+    function show_exc_form(id,na,name){
+        $('#exc_txt'+id+'_form').css('display',$('#exc_txt'+id+'_form').css('display')=='none'?'block':'none')
+        $('#exc_txt'+id+'_form').html('常用'+name+'  <br>');
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/box_load?rr=&xxx_save_id='+(na=="jb"?8:7)
+			$.getJSON( urlx2,{} , function( r ){
+			rr=Base64.decode(JSON.parse(r).msg)
+            htmlAdd1 = "<textarea class='exc_txt1' name='exc_txt1' value='' style='width:700px;height:20px;display: inline-table;white-space: nowrap;resize: none; overflow: hidden;float: left;'>";
+            htmlAdd3 = "</textarea><input style='padding-bottom: 4px;' type='submit' onclick='copy_text(($(this).prev().text()))' value='复制'><br>";
+            strarr=rr.split('\n');strall="";
+            for (var i = 0; i < strarr.length; i++) {
+                if(strarr[i].trim()!=""){strall=strall+htmlAdd1+strarr[i]+htmlAdd3}                }
+            $('#exc_txt'+id+'_form').append(strall)
+        })
+    }
+    //页面加载后执行
+    box_index=0;
+    setInterval("start_upbox();",5000);
+    function start_upbox() {
+        if (document.getElementById("main_nav")!=null && document.getElementById("main_nav").style.display=="block"){
+            xxx_data_sort(1)
+        };
+        if (document.getElementById("disk_info")!=null && document.getElementById("main_boxlist")!=null && document.getElementById("main_boxlist").style.display=="block" ){
+            main_boxlist_updiskinfo()
+        };
+        if (document.getElementById("disk_info")!=null && document.getElementById("main_sysinfo")!=null && document.getElementById("main_sysinfo").style.display=="block" ){
+            update_chart()
+        };
+    }
+    function isNumber(val) {
+        var regPos = /^[0-9]+.?[0-9]*$/; // 判断是否是数字
+        return regPos.test(val);
+    }
+    function load_opkg_list(){
+        document.getElementById("opkg_abcef").style="display: none;"
+        urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_opkg_list'
+        ajaxPost( urlx2,{} , function( rsp ) {
+            opkg_tbody_html=document.getElementById("opkg_tbody_html")
+            opkg_tbody_html.innerHTML=""
+            c=0
+            rsp_opkg_json=JSON.parse(rsp)
+            for (var d in rsp_opkg_json) {
+                try {
+                    if (rsp_opkg_json[d]!=undefined){
+                    opkg_tbody_html.innerHTML=opkg_tbody_html.innerHTML+'<tr data-index="0"><td>'+d+'</td><td>'+rsp_opkg_json[d]+'</td><td>install user installed</td><td style="width: 88px;max-width: 88px;min-width: 88px;"><button onclick="opkg_exc(\'remove\',\''+d+'\')">移除</button></td></tr>'}
+                } catch (error) {
+                    c++
+                }
+            }
+            if (c!=0) {$.msg('出现了'+c+'个错误软件包！')}
+        })
+    }
+    var opkg_abcef_butt_set="A";
+    function load_opkg_all_list(){
+        document.getElementById("opkg_abcef").style="display: block;"
+        urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_opkg_all_list?opkg_abcef_butt_set='+opkg_abcef_butt_set
+        ajaxPost( urlx2,{} , function( rsp ) {
+            opkg_tbody_html=document.getElementById("opkg_tbody_html")
+            opkg_tbody_html.innerHTML=""
+            c=0
+            rsp_opkg_json=JSON.parse(rsp)
+            for (var d in rsp_opkg_json) {
+                try {
+                    if (rsp_opkg_json[d]!=undefined){
+                    opkg_tbody_html.innerHTML=opkg_tbody_html.innerHTML+'<tr data-index="0"><td>'+d+'</td><td>'+rsp_opkg_json[d]+'</td><td>insstall</td><td style="width: 88px;max-width: 88px;min-width: 88px;"><button onclick="opkg_exc(\'install\',\''+d+'\')">安装</button></td></tr>'}
+                } catch (error) {
+                    c++
+                }
+            }
+            if (c!=0) {$.msg('出现了'+c+'个错误软件包！')}
+        })
+    }
+    function opkg_exc(opkg_exc,opkg_name){
+        urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/opkg_exc?opkg_exc='+opkg_exc+"&opkg_name="+opkg_name
+        ajaxPost( urlx2,{} , function( rsp ) {
+
+            var content = '<div style="text-align: left;"><iframe id="shell_iframe" allowtransparency="true" style="background-color=transparent" frameborder="0" width="650" height="350" scrolling="no" src="'+document.location.origin+':62312"></iframe></div>'
+            $.dialog({
+                width: 700,
+                top:0,
+                title: '提示',
+                content: content,
+                lock: true,
+                beforeunload: function() {if (opkg_exc=="remove"){load_opkg_list();}}
+            });
+        })
+    }
+    function opkg_abcd(obj){
+        opkg_abcef_butt=document.getElementById("opkg_abcef").getElementsByTagName("button")
+        for (var n = 0; n < opkg_abcef_butt.length; n++) {
+            if(opkg_abcef_butt[n].innerHTML==obj.innerHTML){
+                opkg_abcef_butt[n].style="background: #19b6f8;color: #fff;"
+                opkg_abcef_butt_set=obj.innerHTML
+            }else{
+                opkg_abcef_butt[n].style=""
+            }
+        }
+        load_opkg_all_list()
+    }
+    function sizeTostr(size) {
+        var data = "";
+        if (size < 0.1 * 1024) { //如果小于0.1KB转化成B
+            data = size.toFixed(2) + "B";
+        } else if (size < 0.1 * 1024 * 1024) {//如果小于0.1MB转化成KB
+            data = (size / 1024).toFixed(2) + "KB";
+        } else if (size < 0.1 * 1024 * 1024 * 1024) { //如果小于0.1GB转化成MB
+            data = (size / (1024 * 1024)).toFixed(2) + "MB";
+        } else { //其他转化成GB
+            data = (size / (1024 * 1024 * 1024)).toFixed(2) + "GB";
+        }
+        var sizestr = data + "";
+        var len = sizestr.indexOf("\.");
+        var dec = sizestr.substr(len + 1, 2);
+        if (dec == "00") {//当小数点后为00时 去掉小数部分
+            return sizestr.substring(0, len) + sizestr.substr(len + 3, 2);
+        }
+        return sizestr;
+    }
+    function JsonSort(json,key){
+    for(var j=1,jl=json.length;j < jl;j++){
+        var temp = json[j],
+            val  = temp[key],
+            i    = j-1;
+        while(i >=0 && json[i][key]>val){
+            json[i+1] = json[i];
+            i = i-1;
+        }
+        json[i+1] = temp;
+
+    }
+    return json;
+
+    }
+    function querynetdiv(obj,confname){
+        var div_all_list = obj.parentElement.parentElement.querySelectorAll('[id^="dialog_"]');
+        for(var i = 0; i < div_all_list.length; i++){div_all_list[i].style="display:none;";};
+        var p_all_list = obj.parentElement.querySelectorAll('[class="xxx_title2"]');
+        for(var i = 0; i < p_all_list.length; i++){p_all_list[i].style="border-bottom: #e6e6e6 solid 1px;color:#eee;";};
+        document.getElementById("dialog_"+confname).style="display:block;"
+        obj.style="border-bottom: #f39509 solid 1px;color:#fff;"
+    }
+    function upfir(){
+        ajaxPost(web_url+'get_firewall',{},function(firewall_data){
+            firewall_rule_data_to_arr(JSON.parse(firewall_data));
+            firewall_zone_data_to_arr(JSON.parse(firewall_data));
+        })
+    }
+    function upnet(){
+        ajaxPost(web_url+'get_route',{},function(route_data){route_data_to_arr(route_data);})
+        ajaxPost(web_url+'get_dhcp',{},function(dhcp_json){dhcp_data_to_arr(JSON.parse(dhcp_json));})
+        ajaxPost(web_url+'get_network',{},function(network_json){network_data_to_arr(JSON.parse(network_json));})
+        ajaxPost(web_url+'get_wireless',{},function(wireless_json){wireless_data_to_arr(JSON.parse(wireless_json));})
+    }
+
+    firewall_zone_tbody_innerHTML='';
+    function firewall_zone_data_to_arr(firewall_json){
+        if(firewall_zone_tbody_innerHTML==''){firewall_zone_tbody_innerHTML=document.getElementById("firewall_zone_tbody").innerHTML}
+        document.getElementById("firewall_zone_tbody").innerHTML=firewall_zone_tbody_innerHTML
+        for (var i = 0; i < firewall_json["list"].length; i++){
+            try {
+                if (firewall_json["list"][i].firewall_class=="zone" || firewall_json["list"][i].firewall_class=="defaults"){
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML.replace("名称",firewall_json["list"][i].firewall_cname)
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML2.replace("标题",firewall_json["list"][i].firewall_title)
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML2.replace("入站",firewall_json["list"][i].firewall_input)
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML2.replace("出站",firewall_json["list"][i].firewall_output)
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML2.replace("转发",firewall_json["list"][i].firewall_forward)
+                    firewall_zone_tbody_innerHTML2=firewall_zone_tbody_innerHTML2.replace("涵盖网络",firewall_json["list"][i].firewall_network)
+                    document.getElementById("firewall_zone_tbody").innerHTML=document.getElementById("firewall_zone_tbody").innerHTML+firewall_zone_tbody_innerHTML2
+                    }
+            } catch (error) {
+                console.log("firewall_json 未发现")
+            }
+        }
+        document.getElementById("firewall_zone_tbody").innerHTML=document.getElementById("firewall_zone_tbody").innerHTML+get_th_add_string("firewall_zone",firewall_zone_tbody_innerHTML.split("</th>").length)
+    }
+
+    firewall_rule_tbody_innerHTML='';
+    function firewall_rule_data_to_arr(firewall_json){
+        if(firewall_rule_tbody_innerHTML==''){firewall_rule_tbody_innerHTML=document.getElementById("firewall_rule_tbody").innerHTML}
+        document.getElementById("firewall_rule_tbody").innerHTML=firewall_rule_tbody_innerHTML
+        for (var i = 0; i < firewall_json["list"].length; i++){
+            try {
+                if (firewall_json["list"][i].firewall_class=="rule"){
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML.replace("名称",firewall_json["list"][i].firewall_cname)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("标题",firewall_json["list"][i].firewall_title)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("IP类型",firewall_json["list"][i].firewall_family)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("源区域",firewall_json["list"][i].firewall_src)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("源端口",firewall_json["list"][i].firewall_src_port)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("协议",firewall_json["list"][i].firewall_proto)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("目标区域",firewall_json["list"][i].firewall_dest)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("目标端口",firewall_json["list"][i].firewall_dest_port)
+                    firewall_rule_tbody_innerHTML2=firewall_rule_tbody_innerHTML2.replace("动作",firewall_json["list"][i].firewall_target)
+                    document.getElementById("firewall_rule_tbody").innerHTML=document.getElementById("firewall_rule_tbody").innerHTML+firewall_rule_tbody_innerHTML2
+                    }
+            } catch (error) {
+                console.log("firewall_json 未发现")
+            }
+        }
+        document.getElementById("firewall_rule_tbody").innerHTML=document.getElementById("firewall_rule_tbody").innerHTML+get_th_add_string("firewall_rule",firewall_rule_tbody_innerHTML.split("</th>").length)
+    }
+
+    dhcp_tbody_innerHTML='';
+    function dhcp_data_to_arr(dhcp_json){
+        if(dhcp_tbody_innerHTML==''){dhcp_tbody_innerHTML=document.getElementById("dhcp_tbody").innerHTML}
+        document.getElementById("dhcp_tbody").innerHTML=dhcp_tbody_innerHTML
+        for (var i = 0; i < dhcp_json["list"].length; i++){
+            try {
+                if (dhcp_json["list"][i].dhcp_class=="dhcp"){
+                    dhcp_tbody_innerHTML2=dhcp_tbody_innerHTML.replace("名称",dhcp_json["list"][i].dhcp_cname)
+                    dhcp_tbody_innerHTML2=dhcp_tbody_innerHTML2.replace("接口",dhcp_json["list"][i].dhcp_interface)
+                    dhcp_tbody_innerHTML2=dhcp_tbody_innerHTML2.replace("起始IP",dhcp_json["list"][i].dhcp_start==""?"null":dhcp_json["list"][i].dhcp_start)
+                    dhcp_tbody_innerHTML2=dhcp_tbody_innerHTML2.replace("结束IP",dhcp_json["list"][i].dhcp_limit==""?"null":dhcp_json["list"][i].dhcp_limit)
+                    dhcp_tbody_innerHTML2=dhcp_tbody_innerHTML2.replace("有效期",dhcp_json["list"][i].dhcp_leasetime==""?"null":dhcp_json["list"][i].dhcp_leasetime)
+                    document.getElementById("dhcp_tbody").innerHTML=document.getElementById("dhcp_tbody").innerHTML+dhcp_tbody_innerHTML2
+                }
+            } catch (error) {
+                console.log("dhcp_json 未发现")
+            }
+        }
+        document.getElementById("dhcp_tbody").innerHTML=document.getElementById("dhcp_tbody").innerHTML+get_th_add_string("dhcp",dhcp_tbody_innerHTML.split("</th>").length)
+    }
+
+    network_tbody_innerHTML='';
+    function network_data_to_arr(network_json){
+        if(network_tbody_innerHTML==''){network_tbody_innerHTML=document.getElementById("network_tbody").innerHTML}
+        document.getElementById("network_tbody").innerHTML=network_tbody_innerHTML
+        for (var i = 0; i < network_json["list"].length; i++){
+            try {
+                if (network_json["list"][i].network_addr+network_json["list"][i].network_proto!=""){
+                    network_tbody_innerHTML2=network_tbody_innerHTML.replace("地址",network_json["list"][i].network_addr==""?"null":network_json["list"][i].network_addr)
+                    network_tbody_innerHTML2=network_tbody_innerHTML2.replace("名称",network_json["list"][i].network_cname)
+                    network_tbody_innerHTML2=network_tbody_innerHTML2.replace("接口",network_json["list"][i].network_ifname)
+                    network_tbody_innerHTML2=network_tbody_innerHTML2.replace("MAC",network_json["list"][i].network_macaddr==""?"null":network_json["list"][i].network_macaddr)
+                    network_tbody_innerHTML2=network_tbody_innerHTML2.replace("方式",network_json["list"][i].network_proto==""?"null":network_json["list"][i].network_proto)
+                    network_tbody_innerHTML2=network_tbody_innerHTML2.replace("掩码",network_json["list"][i].network_netmask==""?"null":network_json["list"][i].network_netmask)
+                    document.getElementById("network_tbody").innerHTML=document.getElementById("network_tbody").innerHTML+network_tbody_innerHTML2
+                }
+            } catch (error) {
+                console.log("network_json 未发现")
+            }
+        }
+        document.getElementById("network_tbody").innerHTML=document.getElementById("network_tbody").innerHTML+get_th_add_string("network",network_tbody_innerHTML.split("</th>").length)
+    }
+
+    wireless_tbody_innerHTML='';
+    function wireless_data_to_arr(wireless_json){
+        if(wireless_tbody_innerHTML==''){wireless_tbody_innerHTML=document.getElementById("wireless_tbody").innerHTML}
+        document.getElementById("wireless_tbody").innerHTML=wireless_tbody_innerHTML
+        for (var i = 0; i < wireless_json["list"].length; i++){
+            try {
+                if (wireless_json["list"][i].wireless_key+wireless_json["list"][i].wireless_ssid+wireless_json["list"][i].wireless_mode!=""){
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML.replace("名称",wireless_json["list"][i].wireless_cname==""?"null":wireless_json["list"][i].wireless_cname)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("网络",wireless_json["list"][i].wireless_network)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("接口",wireless_json["list"][i].wireless_ifname)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("设备",wireless_json["list"][i].wireless_device)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("模式",wireless_json["list"][i].wireless_mode==""?"null":wireless_json["list"][i].wireless_mode)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("SSID",wireless_json["list"][i].wireless_ssid==""?"null":wireless_json["list"][i].wireless_ssid)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("隐藏",wireless_json["list"][i].wireless_hidden==""?"0":wireless_json["list"][i].wireless_hidden)
+                    wireless_tbody_innerHTML2=wireless_tbody_innerHTML2.replace("密码",wireless_json["list"][i].wireless_key)
+                    document.getElementById("wireless_tbody").innerHTML=document.getElementById("wireless_tbody").innerHTML+wireless_tbody_innerHTML2
+                }
+            } catch (error) {
+                console.log("wireless_json 未发现")
+            }
+        }
+        document.getElementById("wireless_tbody").innerHTML=document.getElementById("wireless_tbody").innerHTML+get_th_add_string("wireless",wireless_tbody_innerHTML.split("</th>").length)
+    }
+    var chart1,chart2,chart3,chart4;
+    var net_data={
+        up:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        down:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    };
+    var mem_data=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var swap_data=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var cpu_data=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var net_tbody_sort="";
+    function update_chart(){
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_info'
+			$.getJSON( urlx2,{} , function( rsp ) {
+                rsp=JSON.parse(rsp)
+                net_data.up.push(parseInt(rsp.info[0].tx_rate/1024, 10))
+                net_data.up.shift()
+                net_data.down.push(parseInt(rsp.info[0].rx_rate/1024, 10))
+                net_data.down.shift()
+                chart1.data.labels.shift()
+                chart1.data.labels.push(new Date().getSeconds()-1)
+                chart1.data.datasets[0].data=net_data.up
+                chart1.data.datasets[0].label="上传 (Kb)"
+                chart1.data.datasets[1].data=net_data.down
+                chart1.data.datasets[1].label="下载 (Kb)"
+                chart1.update()
+
+                cpu_data.push(100-parseInt(rsp.info[2].cpu, 10))
+                cpu_data.shift()
+                chart2.data.datasets[0].data=cpu_data
+                chart2.data.labels.push(new Date().getSeconds()-1)
+                chart2.data.labels.shift()
+                chart2.data.datasets[0].label="负载 (总：100%)"
+                chart2.update()
+
+                mem_data.push(parseInt(rsp.info[1].memory.total/1024/1024, 10)-parseInt(rsp.info[1].memory.free/1024/1024, 10))
+                mem_data.shift()
+                chart3.data.datasets[0].data=mem_data
+                chart3.data.labels.push(new Date().getSeconds()-1)
+                chart3.data.labels.shift()
+                chart3.data.datasets[0].label="占用 (总："+parseInt(rsp.info[1].memory.total/1024/1024, 10)+"MB)"
+                chart3.update()
+
+                swap_data.push(parseInt(rsp.info[1].swap.total/1024/1024, 10)-parseInt(rsp.info[1].swap.free/1024/1024, 10))
+                swap_data.shift()
+                chart4.data.datasets[0].data=swap_data
+                chart4.data.labels.push(new Date().getSeconds()-1)
+                chart4.data.labels.shift()
+                chart4.data.datasets[0].label="占用 (总："+parseInt(rsp.info[1].swap.total/1024/1024, 10)+"MB)"
+                chart4.update()
+
+                //列表数据
+                net_tbody_html=document.getElementById("net_tbody_html")
+                net_tbody_html.innerHTML=""
+                var net_tbody_html_arr=[{"html":"","size":""}],n=0;
+                for (var dev in rsp.info[3]) {
+                    if (rsp.info[3][dev].ip_list.length!=0){
+                        net_tbody_html_arr[n]={"html":'<tr data-index="0"><td style="width: 105px;max-width: 105px;min-width: 105px;">'+rsp.info[3][dev].ip_list[0].ip+'</td><td>'+rsp.info[3][dev].hostname+'</td><td>'+rsp.info[3][dev].ifname+'</td><td>'+sizeTostr(rsp.info[3][dev].ip_list[0].tx_rate)+'</td><td>'+sizeTostr(rsp.info[3][dev].ip_list[0].rx_rate)+'</td><td>'+sizeTostr(rsp.info[3][dev].ip_list[0].tx_bytes)+'</td><td>'+sizeTostr(rsp.info[3][dev].ip_list[0].rx_bytes)+'</td></tr>',"size":rsp.info[3][dev].ip_list[0].max_rx_rate}
+                        n++
+                    }
+                }
+
+                if (net_tbody_sort=="^"){net_tbody_html_arr.sort((a, b) => a.size - b.size);}
+                if (net_tbody_sort=="v"){net_tbody_html_arr.sort((a, b) => b.size - a.size);}
+                for(var i = 0; i < net_tbody_html_arr.length; i++){ { net_tbody_html.innerHTML=net_tbody_html.innerHTML+net_tbody_html_arr[i]["html"] }}
+            });
+    }
+    function create_chart(){
+                var ctx = document.getElementById('net_Chart').getContext('2d');
+                var sec = new Date().getSeconds()
+                chart1 = new Chart(ctx, {
+                    // 要创建的图表类型
+                    type: 'line',
+                    // 数据集
+                    data: {
+                        labels: [sec-9, sec-8, sec-7, sec-6, sec-5, sec-4, sec-3, sec-2, sec-1, sec],
+                        datasets: [{
+                            label: "上传",
+                            borderColor: 'rgb(53, 204, 53)',
+                            data: net_data.up,
+                        },
+                        {
+                            label: "下载",
+                            borderColor: 'rgb(100, 192, 255)',
+                            data: net_data.down,
+                        }
+                        ]
+                    },
+                    // 配置选项
+                    options: {
+                    title: {
+                        display: true,
+                        text: "实时网速"
+                    },
+                        elements: {
+                            line: {
+                                tension: 0 // 禁用贝塞尔曲线
+                            }
+                        }
+                    }
+                });
+                var ctx2 = document.getElementById('cpu_Chart').getContext('2d');
+                chart2 = new Chart(ctx2, {
+                    // 要创建的图表类型
+                    type: 'line',
+                    // 数据集
+                    data: {
+                        labels: [sec-9, sec-8, sec-7, sec-6, sec-5, sec-4, sec-3, sec-2, sec-1, sec],
+                        datasets: [{
+                            label: "负载",
+                            borderColor: 'rgb(53, 204, 53)',
+                            data: cpu_data,
+                        }]
+                    },
+                    // 配置选项
+                    options: {
+                    title: {
+                        display: true,
+                        text: "CPU负载"
+                    },
+                        elements: {
+                            line: {
+                                tension: 0 // 禁用贝塞尔曲线
+                            }
+                        }
+                    }
+                });
+                var ctx3 = document.getElementById('mem_Chart').getContext('2d');
+                chart3 = new Chart(ctx3, {
+                    // 要创建的图表类型
+                    type: 'line',
+                    // 数据集
+                    data: {
+                        labels: [sec-9, sec-8, sec-7, sec-6, sec-5, sec-4, sec-3, sec-2, sec-1, sec],
+                        datasets: [{
+                            label: "占用",
+                            borderColor: 'rgb(53, 204, 53)',
+                            data: mem_data,
+                        }]
+                    },
+                    // 配置选项
+                    options: {
+                    title: {
+                        display: true,
+                        text: "实时内存"
+                    },
+                        elements: {
+                            line: {
+                                tension: 0 // 禁用贝塞尔曲线
+                            }
+                        }
+                    }
+                });
+                var ctx4 = document.getElementById('swap_Chart').getContext('2d');
+                chart4 = new Chart(ctx4, {
+                    // 要创建的图表类型
+                    type: 'line',
+                    // 数据集
+                    data: {
+                        labels: [sec-9, sec-8, sec-7, sec-6, sec-5, sec-4, sec-3, sec-2, sec-1, sec],
+                        datasets: [{
+                            label: "占用",
+                            borderColor: 'rgb(53, 204, 53)',
+                            data: swap_data,
+                        }]
+                    },
+                    // 配置选项
+                    options: {
+                    title: {
+                        display: true,
+                        text: "虚拟内存"
+                    },
+                        elements: {
+                            line: {
+                                tension: 0 // 禁用贝塞尔曲线
+                            }
+                        }
+                    }
+                });
+    }
+    //加载js
+    function loadJS(url, callback){
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.onload = function(){
+            callback();
+        };
+        script.src = url;
+        document.getElementById("box_html").appendChild(script);
+    }
+    //加载css
+    function loadCSS(href) {
+        var cssLink = document.createElement("link");
+        cssLink.rel = "stylesheet";
+        cssLink.type = "text/css";
+        cssLink.href = href;
+        document.getElementById("box_html").appendChild(cssLink);
+    }
+    //加载style
+    function loadStyle(css){
+        var style = document.createElement("style");
+        style.type = "text/css";
+        try{
+            style.appendChild(document.createTextNode(css));
+        } catch (ex){
+            style.textContent = css;
+        }
+        var head = document.getElementById("box_html");
+        head.appendChild(style);
+    }
+    //set_opkg_path
+    function set_opkg_path(obj){
+        $.msg("正在设置 "+obj[obj.selectedIndex].innerHTML+ " ......")
+        urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/set_opkg_path?opkg_path='+obj[obj.selectedIndex].value
+        ajaxPost( urlx2,{} , function( rsp ) {
+            $.msg("设置 "+obj[obj.selectedIndex].innerHTML+ " 为安装位置完成.")
+        })
+    }
+    //防止页面登录超时
+    disk_info_running=false;
+    function main_boxlist_updiskinfo(){
+        if(!disk_info_running){
+            disk_info_running=true;
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/disk_info'
+			$.getJSON( urlx2,{} , function( r ){
+                    disk_info_dom=document.getElementById("disk_info")
+                    if (disk_info_dom instanceof HTMLElement){disk_info_dom.innerHTML=Base64.decode(r.msg);disk_info_running=false;}
+                }
+            );
+        }
+    }
+    //box载入
+    function box_load(obj_id,rr){
+            document.getElementById("xxx_box").style.pointerEvents="none"
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/box_load?xxx_save_id=6&rr='+rr
+			$.getJSON( urlx2,{} , function( r ) {
+            if(r!=""){
+                box_list=r;
+                xxx_box_html_ele=document.getElementById(obj_id)
+                if(xxx_box_html_ele!=null){
+                    xxx_sort(obj_id);
+                    //box_mode_update(document.getElementById("xxx_mode_checkbox_ram").checked)
+                }
+                if(box_list["up_msg"]!=undefined && box_list["up_msg"]!=""){
+                $.msg(box_list["up_msg"]);}else if(rr!=undefined){rsp=rr.trim()==""?"完成":rr;$.msg(rsp)}
+                }else{$.msg("数据异常。")}
+                document.getElementById("xxx_box").style.pointerEvents=""
+            });
+    }
+    //box载入
+    function check_install_obj(i){
+        //下载插件，检查是否能够安装，无法下载，空间不够则不显示
+        if(box_list["tmp_ava"]<(box_list["box"][i]["file_size"]/1024+20)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    check_download_msg=""
+    function check_download_obj(i){
+        //下载插件，检查是否能够下载，主要检查依赖和空间，无法下载，空间不够则不显示
+        if(box_list["box"][i]["file_size"] == "" || box_list["xxx_ava"]<(box_list["box"][i]["file_size"]/1024+2)){
+            if (box_list["xxx_dep"].indexOf(box_list["box"][i]["dep"]) == -1 && box_list["box"][i]["dep"] != ""){
+                check_download_msg="该插件依赖"+box_list["box"][i]["dep"]+"，请检查是否安装或启动！"
+                return true;
+            }else if (box_list["box"][i]["dep"] == ""){
+                check_download_msg="空间不足，无法完成下载。"
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return false;
+        }
+    }
+    check_run_msg=""
+    function check_run_obj(dep){
+        //运行插件，检查是否能够运行，主要检查依赖
+        if (box_list["xxx_dep"].indexOf(dep) == -1 && dep != ""){
+            check_run_msg="该插件依赖"+(dep=="terminal"?"terminal":dep+"和terminal")+"，请检查是否启动！"
+            if (box_list["xxx_dep"].indexOf("terminal") == -1 && dep != ""){ return true; }
+            return false;
+        }else{
+            return false;
+        }
+    }
+    function upload_file() {
+        var fileObj = document.getElementById("upload_file").files[0]; // js 获取文件对象
+        var FileController = document.location.origin+":61111/?upload";                    // 接收上传文件的后台地址
+
+        // FormData 对象
+        var form = new FormData();
+
+        mnt_checked=document.getElementById("mtd_checked").checked
+        form.append("mac", "upload_file");                        // 可以增加表单数据
+        if(mnt_checked){form.append("up_path", "mtd");}else{form.append("up_path", "sda");  }
+        form.append("file", fileObj);                           // 文件对象
+
+        // XMLHttpRequest 对象
+        var xhr = new XMLHttpRequest();
+        xhr.open("post", FileController, true);
+        xhr.onload = function () {
+            var progressBar = document.getElementById("progressBar");
+            var percentageDiv = document.getElementById("percentage");
+            progressBar.value = 100;
+            percentageDiv.innerHTML = "正在效验文件...";
+            box_load('xxx_box',"update-_-"+fileObj.name);
+        };
+        xhr.upload.addEventListener("progress", progressFunction, false);
+        xhr.send(form);
+    }
+
+    function progressFunction(evt) {
+        var progressBar = document.getElementById("progressBar");
+        var percentageDiv = document.getElementById("percentage");
+        if (evt.lengthComputable) {
+            progressBar.max = evt.total;
+            progressBar.value = evt.loaded;
+            percentageDiv.innerHTML = Math.round(evt.loaded / evt.total * 99) + "%";
+        }
+    }
+    function update_xxx_box(main_id) {
+        ajaxPost('<%=REQUEST_URI%>?xxx_web=1', {},function(r){
+            //加载html
+            config_bak_box_id=main_id
+            start_name="<!-- "+config_bak_box_id+"_box_ajax_start -->"
+            a=r.indexOf(start_name)
+            b=r.indexOf("<!-- "+config_bak_box_id+"_box_ajax_end -->")
+            if (a != -1 && b != -1) {
+                innerHTML=r.substr(a+start_name.length,b-a-start_name.length)
+                document.getElementById(main_id).innerHTML=innerHTML;
+            }
+            //加载js
+            start_name="<!-- "+main_id+"_js_box_ajax_start -->"
+            a=r.indexOf(start_name)
+            b=r.indexOf("<!-- "+main_id+"_js_box_ajax_end -->")
+            if (a != -1 && b != -1) {
+                document.getElementById(main_id).remove;
+                innerHTML=r.substr(a+start_name.length,b-a-start_name.length)
+                var script = document.createElement('script');
+                script.type = "text/javascript";
+                script.id = main_id;
+                script.text = innerHTML;
+                document.body.appendChild(script);
+            }
+            //加载css
+            start_name="<!-- "+main_id+"_css_box_ajax_start -->"
+            a=r.indexOf(start_name)
+            b=r.indexOf("<!-- "+main_id+"_css_box_ajax_end -->")
+            if (a != -1 && b != -1) {
+                document.getElementById(main_id).remove;
+                innerHTML=r.substr(a+start_name.length,b-a-start_name.length)
+                var style = document.createElement("style");
+                style.type="text/css";
+                style.id = main_id;
+                style.innerHTML = innerHTML;
+                document.body.appendChild(style);
+            }
+        })
+    }
+    box_search_text="";
+    search_on=0;
+    function box_search(){
+        box_search_text=document.getElementById('box_search_text').value
+        xxx_sort('xxx_box')
+        xxx_page("xxx_box",0,'th');
+        search_on=0
+    }
+    xxx_app_update=0
+    function xxx_sort(obj_id) {
+                document.getElementById("box_title").innerHTML=box_list["title"]+" "+xxx_list["rom_version"]+"<br>"
+
+                box_html='<table border="1" id="new_xxx_box_table" class="new_xxx_box_table" align="center" style="border-color: #FFF;"><tbody style="height: 370px;width: 740px;display: inline-block;">'
+                hnum=0;
+                box_html=box_html+inner_jion(true)
+                box_html=box_html+inner_jion(false)
+                box_html=box_html+'</tbody></table>'
+                if (box_search_text != "" || (box_search_text == "" && search_on == 1)){ document.getElementById('new_xxx_box_table').innerHTML=box_html;return}
+
+                box_html=box_html+"<div id='new_xxx_box_div' style='text-align: left;margin-left: 12px;float: left;margin-top: 5px;'>"
+                box_html=box_html+"<div class=\"ui-page-outer\"><div class=\"ui-page-container ui-noselect\"><div class=\"ui-page-first\" onclick='xxx_page(\""+obj_id+"\",\"0\",\"th\")'>首页</div><div class=\"ui-page-prev\" onclick='xxx_page(\""+obj_id+"\",\"-\",\"th\")'>上一页</div><div id=\"ui-page-wrapper\" class=\"ui-page-wrapper\" style=\"width: auto;\"><div style=\"width: 5820px;\"></div></div><div class=\"ui-page-next\" onclick='xxx_page(\""+obj_id+"\",\"+\",\"th\")'>下一页</div><div class=\"ui-page-last\" onclick='xxx_page(\""+obj_id+"\",\"-1\",\"th\")'>尾页</div><div id='page_count' style='margin: 10px 0 0 5px;'></div></div></div></div>"
+
+                box_html=box_html+'<input type="file" onchange="upload_file()" name="upload_file" id="upload_file" style="display: none;" />'
+                box_html=box_html+'<div id="box_search" style="float: right;width: 260px;text-align: center;margin-top: 6px;text-align: right;display: none;">'
+                box_html=box_html+'<form action="#" onsubmit="return false;"><input type="text" oninput="search_on=1;box_search()" value="" id="box_search_text" style="width:140px"><input type="submit" onclick="document.getElementById(\'box_search\').style.display=\'none\';document.getElementById(\'box_search_text\').value=\'\';document.getElementById(\'box_p\').style.display=\'inline-block\';box_search();" style="width:30px;margin-right: 5px;" value="ⓧ"></form></div>'
+                box_html=box_html+'<div id="box_p" style="float: right;width: 260px;text-align: center;margin-top: 6px;text-align: right;">'
+
+                box_html=box_html+'<button info style="width: auto;margin: 0 5px;" id="box_list_update" onclick="xxx_box_exec(\'update_box_list_json\',\'box_list\',this)">刷新</button>'
+                box_html=box_html+'<button id="xxx_down_all_tar_url_butt" info style="width: auto;margin: 0 5px;display:none;"  onclick="xxx_box_exec(\'xxx_down_all_tar_url\',\'box_list\',this)" value="下载源址">下载源</button>'
+                box_html=box_html+'<button id="xxx_source_list_url_butt" info style="width: auto;margin: 0 5px;display:none;" onclick="xxx_box_exec(\'xxx_source_list_url\',\'box_list\',this)" value="软件源址">软件源</button>'
+                box_html=box_html+'<button id="xxx_source_list_url_butt" info style="width: auto;margin: 0 5px;" onclick="document.getElementById(\'box_search\').style.display=\'inline-block\';document.getElementById(\'box_p\').style.display=\'none\';document.getElementById(\'box_search_text\').focus();" value="搜索">搜索</button>'
+                //box_html=box_html+'<button info style="width: auto;margin: 0 5px;" onclick="window.open('+document.domain+':61111\')" value="上传固件">上传固件</button>'
+                if(box_list['is_rom_exists']){
+                    box_html=box_html+'<button info style="width: auto;margin: 0 5px;" onclick="xxx_install(this)">发现升级包</button></div>'
+                } else if (xxx_list['rom_version'] < box_list['rom_version'] ){
+                    box_html=box_html+'<button info style="width: auto;margin: 0 5px;" onclick="xxx_update(this)">发现新版本</button></div>'
+                } else{
+                    box_html=box_html+'<button info style="width: auto;margin: 0 5px;" onclick="xxx_sys_2(this)">检查更新</button></div>'
+                }
+                xxx_box_html_ele=document.getElementById(obj_id)
+                xxx_box_html_ele.innerHTML=box_html
+                xxx_page(obj_id,xxx_page_index,'th')
+                //检查软件更新
+                if(xxx_app_update==0){
+                    xxx_app_update=1
+                    urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/box_exec?exec_name=xxx_app_update&box_name=all'
+                    $.getJSON( urlx2,{} , function( r ){
+                        msg=Base64.decode(JSON.parse(r).msg).trim();
+                        if (msg!="") {
+                            $.msg("检查到 "+msg+" 有新版本供升级")
+                            xxx_name_arr=msg.split("\n")
+                            for (var i = 0; i < xxx_name_arr.length; i++){
+                                try {
+                                    xxx_update_div=document.getElementById("xxx_update_"+xxx_name_arr[i])
+                                    xxx_update_div.style="display:inline;color: chartreuse;visibility: visible;"
+                                } catch (error) {
+                                    console.log(xxx_name_arr[i]+" 未发现")
+                                }
+                            }
+                        }
+                    })
+                }
+    }
+
+    function xxx_update(obj){
+        if(window.confirm(box_list["rom_version_info"].replaceAll('$version',box_list["rom_version"]).replaceAll('<br>',"\n")+"\n确定需要升级吗？")){xxx_box_exec('down_xxx_install','',obj);}
+    }
+
+    function xxx_install(obj){if(window.confirm("\n确定需要升级吗？")){xxx_box_exec('xxx_install','',obj);}}
+    new_prm=""
+    function set_prm(prm,prm_usage,name,obj){
+        new_prm=""
+        new_prm=window.prompt("这是设置启动参数，请根据参数说明设定参数，设定错误可能导致无法启动，如果不太了解不建议修改。\n"+prm_usage.replace(/(\n[\s\t]*\r*\n)/g, '\n').replace(/^[\n\r\n\t]*|[\n\r\n\t]*$/g, ''),prm)
+        if(new_prm){xxx_box_exec('set_prm',name,obj);}
+    }
+
+    box_list_select="全部插件"
+    //set_box_list
+    function set_box_list(obj){
+        box_list_select=obj[obj.selectedIndex].innerHTML
+        xxx_box_exec('update_box_list_json','box_list',document.getElementById("box_list_update"))
+    }
+    hnum=0;
+    function inner_jion(is_install){
+        inner="";
+        for(var i = 0; i < box_list["box"].length; i++){
+            if( box_list_select.indexOf("可用") != -1 && check_download_obj(i)){continue;}
+            if (box_search_text != "" && ( box_list["box"][i]["name"].indexOf(box_search_text) == -1 && box_list["box"][i]["title"].indexOf(box_search_text) == -1) ){   continue;}
+            if (box_list["box"][i]["is_model"]) {
+                if (box_list["box"][i]["is_install"]==is_install){
+                    box_cz=""
+                    if (box_list["box"][i]["is_install"]) {
+                        if (box_list["box"][i]["class"]=="service" || box_list["box"][i]["class"]=="other" || box_list["box"][i]["class"]=="boxfunc") {
+                            if (box_list["box"][i]["is_run"]) {
+                                if (box_list["box"][i]["url"]!="0" && box_list["box"][i]["url"]!=""){
+                                    box_cz=box_cz+'<button onclick="window.open(\''+ box_list["box"][i]["url"].replace(/\n|\r/g, "").replaceAll('{ip}',document.domain) +'\', \'_blank\');">浏览</button>'
+                                }
+                                box_cz=box_cz+'<button onclick="xxx_box_exec(\'stop\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'" warn>关闭</button>'
+                            }else{
+                                box_cz=box_cz+'<button onclick="xxx_box_exec(\'start\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">开启</button>'
+                                if (box_list["box"][i]["prm"]!="" && box_list["box"][i]["prm"]!=undefined){
+                                    box_cz=box_cz+'<button onclick="set_prm(\''+box_list["box"][i]["prm"]+'\',\''+box_list["box"][i]["prm_usage"]+'\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">参数</button>'
+                                }
+                            }
+                            if (box_list["box"][i]["is_service_run"]) {
+                                box_cz=box_cz+'<button onclick="xxx_box_exec(\'disable\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">停用</button>'
+                            }else{
+                                box_cz=box_cz+'<button onclick="xxx_box_exec(\'enable\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">自启</button>'
+                            }
+                        }else if (box_list["box"][i]["class"]=="terminal") {
+                            box_cz=box_cz+'<button onclick="xxx_box_exec(\'run\',\''+box_list["box"][i]["name"]+'\',this);" ID="'+i+'">运行</button>'
+                        }else if (box_list["box"][i]["is_run"] && box_list["box"][i]["class"]=="dockerd") {
+                            box_cz=box_cz+'<button onclick="window.open(\''+ box_list["box"][i]["url"].replace(/\n|\r/g, "").replaceAll('{ip}',document.domain) +'\', \'_blank\');" warn>打开</button>'
+                        }
+                        box_cz=box_cz+'<button onclick="xxx_box_exec(\'uninstall\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">卸载</button>'
+                        // if (box_list["box"][i]["file_size"]>0)box_cz=box_cz+'<div class="xxx_null_div" onclick="if(window.confirm(\''+box_list["box"][i]["name"]+' 沒有找到此功能的资源包。\')){$.msg(\'请手动下载后复制到移动磁盘/mi_box目录。\')}">•</div>'
+                    }else{
+                        if (box_list["box"][i]["tar_state"]) {
+                            box_cz=box_cz+'<button onclick="xxx_box_exec(\'install\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">安装</button>'
+                            box_cz=box_cz+'<button onclick="xxx_box_exec(\'del_tar\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">删除</button>'
+                        }else{
+                            box_cz=box_cz+'<button onclick="xxx_box_exec(\'down_install\',\''+box_list["box"][i]["name"]+'\',this)" ID="'+i+'">下载</button>'
+                        }
+                    }
+                    is_sda_exist="<%=string.sub(luci.sys.exec("echo $(/bin/df |/bin/grep /dev/sd >/dev/null && echo \'1\' || echo \'0\')"), 0, 1)%>"
+                    temp1=""
+                    box_cz2=""
+                    if(box_list["box"][i]["tar_state"] && is_sda_exist=="1" && box_list["box"][i]["file_size"]>0){
+                        if (box_list["box"][i]["disk_path"]=="mtd") {
+                            temp1="\n处于系统空间,移除硬盘功能不受影响。"
+                            box_cz2=box_cz2+'<div class="xxx_mtd_div" title="'+box_list["box"][i]["name"]+temp1+',可移动到硬盘空间" onclick="if(window.confirm(\''+box_list["box"][i]["name"]+' ，确定移动到硬盘空间吗？\')){xxx_box_exec(\'switch_path_'+box_list["box"][i]["disk_path"]+'\',\''+box_list["box"][i]["name"]+'\',this);}">•</div>'
+                        } else if(box_list["box"][i]["disk_path"]=="sda") {
+                            temp1="\n处于硬盘空间，移除硬盘后可能无法开启。"
+                            box_cz2=box_cz2+'<div class="xxx_sda_div" title="'+box_list["box"][i]["name"]+temp1+',可移动到系统空间" onclick="if(window.confirm(\''+box_list["box"][i]["name"]+' ，确定移动到系统空间吗？\')){xxx_box_exec(\'switch_path_'+box_list["box"][i]["disk_path"]+'\',\''+box_list["box"][i]["name"]+'\',this);}">•</div>'
+                        } else {
+                            temp1="\n处于临时空间，重启后需要通过网络获取。"
+                        }
+                    }
+                    box_cz2=box_cz2+'<div class="xxx_update_div" title="'+box_list["box"][i]["name"]+'升级到最新版本" style="display: inline;" id="xxx_update_'+box_list["box"][i]["name"]+'" onclick="if(window.confirm(\''+box_list["box"][i]["name"]+' 发现新版本，确定需要更新吗？\')){xxx_box_exec(\'update\',\''+box_list["box"][i]["name"]+'\',this);}">•</div>'
+                    file_info_string1='文件大小：'+box_list["box"][i]["file_size"]+'kb'
+                    file_info_string1=(box_list["box"][i]["file_path"]==""?"未找到该文件\n"+file_info_string1:file_info_string1)
+                    file_info_string2='\n文件位置：'+(box_list["box"][i]["file_path"]==""?"无":box_list["box"][i]["file_path"])
+                    file_info_string2=file_info_string2+'\n'+temp1
+                    title=box_list["box"][i]["content"].replaceAll('{ip}',document.domain)
+                    if(box_list["box"][i]["ID"]>10000) {
+                        bcolor=' style="background:#FFFAF0"'
+                    }else if(box_list["box"][i]["ID"]>9000) {
+                        bcolor=' style="background:lightcyan"'
+                    }else{
+                        bcolor=""
+                    }
+                    inner=inner+(hnum%3==0?"<tr>":"")
+                    inner=inner+`
+                    <th style="width:33%;">
+                        <div class="xxx_box_table_div1" `+bcolor+`>
+                            <div class="xxx_box_table_div2">
+                                <div class="xxx_box_table_logo"><img title="`+(box_list["box"][i]["file_path"]==""?"未找到该文件\n"+'文件大小：'+box_list["box"][i]["file_size"]+'kb':'文件大小：'+box_list["box"][i]["file_size"]+'kb')+'\n文件位置：'+(box_list["box"][i]["file_path"]==""?"无":box_list["box"][i]["file_path"])+temp1+`" onerror="this.src='/img/ico/null.ico'" src="/img/ico/`+box_list["box"][i]["name"]+`.ico" alt="`+box_list["box"][i]["name"]+`" width="48" height="48">`+box_cz2+`</div>
+                                <div class="xxx_box_table_class" title="`+to_classtext2(box_list["box"][i]["class"])+`">`+to_classtext(box_list["box"][i]["class"])+`</div>
+                            </div>
+                            <div class="xxx_box_table_div3">
+                                <div class="xxx_box_table_title">`+box_list["box"][i]["name"]+"("+box_list["box"][i]["title"]+`)</div>
+                                <div class="xxx_box_table_title2" title="`+title+`">`+title+`</div>
+                                <div class="xxx_box_table_exec">`+box_cz+`</div>
+                            </div>
+                        </div>
+                    </th>`
+                    hnum++;
+                    inner=inner+(hnum%3==0?"</tr>":"")
+                }
+
+            }
+        }
+        return inner;
+    }
+    cmd_view="";
+    var xxx_box_exec_obj;
+    var source_url_old = "<%=luci.sys.exec("echo -n $(uci get lyq.xxx_source_list_url)")%>"
+    function xxx_box_exec(exec_name,box_name,obj){
+        down_info=""
+        box_list_id=obj.id
+        xxx_box_exec_obj=obj.parentElement
+        //显示状态信息和参数信息
+        if (exec_name=="update_box_list_json" ){
+            xxx_app_update=0
+            xxx_box_exec_obj.innerHTML="正在尝试刷新中..."
+            box_load('xxx_box',"刷新完成");
+            return;
+        }else if(exec_name=="xxx_update"){
+            xxx_box_exec_obj.innerHTML="若有新版本在软件中心会有更新提示..."
+        }else if(exec_name=="xxx_install"){
+            xxx_box_exec_obj.innerHTML="系统更新中，请勿其他操作..."
+        }else if(exec_name=="down_xxx_install"){
+            xxx_box_exec_obj.innerHTML="系统下载更新中，请勿其他操作..."
+        }else if(exec_name=="down_install" && ("dockerdnodepython3").indexOf(box_list["box"][box_list_id]["class"])!=-1){
+            if(check_download_obj(box_list_id)){$.msg(check_download_msg);return;}
+        }else if(isNumber(box_list_id) && box_list["box"][box_list_id]["class"]=="terminal" && exec_name!="uninstall" && exec_name!="install"){
+            if(check_run_obj(box_list["box"][box_list_id]["class"])){$.msg(check_run_msg);return;}
+        }else if(isNumber(box_list_id) && box_list["box"][box_list_id]["class"]=="dockerd"){
+            if(check_run_obj(box_list["box"][box_list_id]["class"])){$.msg(check_run_msg);return;}
+        }else if(isNumber(box_list_id) && box_list["box"][box_list_id]["class"]=="node"){
+            if(check_run_obj(box_list["box"][box_list_id]["class"])){$.msg(check_run_msg);return;}
+        }else if(isNumber(box_list_id) && box_list["box"][box_list_id]["class"]=="python3"){
+            if(check_run_obj(box_list["box"][box_list_id]["class"])){$.msg(check_run_msg);return;}
+        }else if(exec_name=="update"){
+            xxx_box_exec_obj.innerHTML="更新中..."
+        }else if(exec_name=="xxx_source_list_url"){
+            var source_url = window.prompt("请输入源地址",source_url_old.trim()==""?"https://github.com/V2023H/xxx_box/blob/main/xxx_box/box_list.json":source_url_old)
+            if(source_url==null){return;}
+            var pattern = /^(http|https|ftp):\/\/[^\s/$.?#].[^\s]*$/;
+            if(pattern.test(source_url)){
+                source_url_old=source_url
+                down_info="&source_url="+btoa(encodeURIComponent(source_url));
+                xxx_box_exec_obj.innerHTML="正在设置源地址..."
+            }else{
+                $.msg("您输入的链接有误，请检查后重新输入！");return;
+            }
+        }else if(exec_name=="xxx_down_all_tar_url"){
+            down_path= "<%=xxx_path%>/xxxbox/inone/main.tar"
+            var down_url_old = "<%=luci.sys.exec("echo -n $(uci get lyq.xxx_down_all_tar_url)")%>"
+            var down_url = window.prompt("请输入全量包地址，默认无需更改!!!",down_url_old.trim()==""?"https://github.com/V2023H/xxx_box/archive/refs/heads/main.zip":down_url_old)
+            if(down_url==null){return;}
+            var pattern = /^(http|https|ftp):\/\/[^\s/$.?#].[^\s]*$/;
+            if(pattern.test(down_url)){
+                down_info="&down_url="+btoa(encodeURIComponent(down_url));
+                xxx_box_exec_obj.innerHTML="正在下载全量包..."
+            }else{
+                $.msg("您输入的链接有误，请检查后重新输入！");return;
+            }
+            down_info="&down_path="+btoa(encodeURIComponent(down_path))+"&down_url="+btoa(encodeURIComponent(down_url))
+
+        }else if(exec_name=="xxx_checkbox_change" || exec_name=="xxx_radio_change" || exec_name=="mnt_radio_change"){
+            down_info="&hide="+(obj.checked==true?"checked":"")
+        }else{
+            if(exec_name=="install"){if(check_install_obj(box_list_id)){$.msg("临时空间不足20MB，无法安装，请检查后再试！");return;}}
+            xxx_box_exec_obj.innerHTML=obj.value+"..."
+        }
+        if(exec_name=="run" && box_list["box"][box_list_id]["class"]=="terminal"){
+            ajaxPost('<%=REQUEST_URI%>?mac='+box_name+'_run', {},function(r){
+                try {
+                    r_json=JSON.parse(r)
+                    if (r_json.statu=="1") {
+                        shell_iframe_width=702
+                        var content = '<div style="text-align: left;"><iframe id="shell_iframe" allowtransparency="true" style="background-color=transparent" frameborder="0" width="650"height="400" scrolling="no" src="'+document.location.origin+':'+r_json.prot+'"></iframe></div>'
+                        cmd_view=$.dialog({
+                            width: shell_iframe_width,
+                            top:0,
+                            title: box_name+' — CMD',
+                            content: content,
+                            lock: true,
+                            beforeunload: function() {ajaxPost('<%=REQUEST_URI%>?mac='+box_name+'_exit', {},function(r){});console.log('run_'+box_name)}
+                        });
+                        elearr=document.getElementsByClassName('panel panel-dialog d-is-open')
+                        box_view.close()
+                        for (var n = 0; n < elearr.length; n++) {
+                            if(elearr[n].style.width == shell_iframe_width+"px"){
+                                document.getElementsByClassName('panel panel-dialog d-is-open')[n].innerHTML=document.getElementsByClassName('panel panel-dialog d-is-open')[n].innerHTML+'<span onclick="fullScreen(\'shell_iframe\')" style="display: block;position: absolute;top: 12px;height: 20px;width: 20px;text-align: center;color: #fff;cursor: pointer;right: 60px;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAARUlEQVR4nO3WwQkAIAwEwe2/6bMAPz4MCboDPoWDKDmQdjk4FXfnBbjNAHEE+Agp+V3Sg+IywnWMhYQRlSzdpTRdAfSXBYUNf4EdmIrcAAAAAElFTkSuQmCC" style="width: 22px;opacity: 0.7;" alt="full-screen--v1"></span><span onclick="cmd_view.close()" class="close d-close"></span>'
+                            }
+                        }
+                    }else{
+                        $.msg(r_json.info);
+                    }
+                } catch(e){
+                    $.msg("该功能无需运行，请在功能页或者终端中使用！");
+                }
+            })
+            return;
+        }
+        <%
+            if luci.sys.exec(xxx_path.."/xxxcon/xxxbox getxxxver int") == "1" then
+                vipmsg='$.msg("准备开始下载...");'
+            else
+                vipmsg='$.msg("该插件需验证高级版后才可以下载");return;'
+            end
+        %>
+        //编辑软件中心操作参数信息
+        if (exec_name=="down_install"){
+            if(box_list["box"][box_list_id]["ID"]>10000){<%=vipmsg%>}
+            down_url = box_list["box"][box_list_id]["download"]
+            mnt_checked=document.getElementById("mtd_checked").checked
+            if(mnt_checked){down_path = "mtd";}else{down_path = "sda";}
+            down_info="&down_path="+btoa(encodeURIComponent(down_path))+"&down_url="+btoa(encodeURIComponent(down_url))
+        }
+        if (exec_name=="update"){
+            mnt_checked=document.getElementById("mtd_checked").checked
+            if(mnt_checked){down_path = "mtd";}else{down_path = "sda";}
+            down_info="&down_path="+btoa(encodeURIComponent(down_path))
+        }
+        if (exec_name=="set_prm"){
+            if (new_prm.indexOf("'") != -1){$.msg("参数不能含有单引号等特殊符号");return;}
+            down_info="&new_prm="+btoa(new_prm)
+        }
+        //提交Post请求
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/box_exec?exec_name='+exec_name+'&box_name='+box_name+down_info
+			$.getJSON( urlx2,{},function(r){
+			r=Base64.decode(JSON.parse(r).msg)
+            //如果是依赖功能则直接弹窗安装
+            bin_path="source /etc/profile >/dev/null && "
+            if(exec_name=="down_install" && box_list["box"][box_list_id]["dep"]!="" && box_list["box"][box_list_id]["dep"]!=undefined ){
+                ssh_exec(bin_path+box_list["box"][box_list_id]["download"],box_list["box"][box_list_id]["class"]);
+                update_xxx_box("main_setlist");
+                return;
+            }
+
+            if(exec_name=="uninstall"  && box_list["box"][box_list_id]["dep"]=="dockerd" && box_list["box"][box_list_id]["class"]=="dockerd"){
+                ssh_exec(bin_path+"docker rm -f $("+bin_path+"docker ps -a | grep "+box_list["box"][box_list_id]["file_path"]+" | awk  '{print $1}')");
+                update_xxx_box("main_setlist");
+                return;
+            }
+            if(exec_name=="uninstall"  && box_list["box"][box_list_id]["dep"]=="node" && box_list["box"][box_list_id]["class"]=="node"){
+                ssh_exec(bin_path+" npm -g uninstall "+box_list["box"][box_list_id]["name"]);
+                update_xxx_box("main_setlist");
+                return;
+            }
+            //执行完成无需任何反馈的操作
+            if(exec_name=="xxx_checkbox_change"){return;}
+            //执行完成需要刷新页面的操作
+            if(r.indexOf("升级完成") != -1 || exec_name=="down_xxx_box_json" || exec_name=="xxx_init" || exec_name=="reinstall_init" ||  exec_name=="uninstall_all" || exec_name=="restart_network" || exec_name=="restart_system" || exec_name=="xxx_install" || exec_name=="restart_firewall" || exec_name=="xxx_radio_change" || exec_name=="mnt_radio_change"){$.msg(r.trim()==""?"完成":r);location.reload();return;}
+            //执行完成需要刷新列表的操作
+            box_load('xxx_box',r.replace(/\n/g, ""));
+            if(exec_name=="xxx_update" ||exec_name=="install"||exec_name=="uninstall"){update_xxx_box("main_setlist");}
+            if(exec_name=="enable"||exec_name=="disable"||exec_name=="uninstall"){update_xxx_box("main_sysauto");}
+        })
+    }
+    function url_qym(){
+        ym=document.location.origin
+        ymarr=ym.split(':')
+        if(ymarr.length=3)
+        {
+            return ymarr[0]+":"+ymarr[1];
+        }else{
+            return ym;
+        }
+
+    }
+    //保存
+    function xxx_save(xxx_save_id){
+        ajaxPost(web_url+'xxx_save?xxx_save_id='+xxx_save_id,$("#xxx").serialize(),function(r){$.msg(r)})
+    }
+    //远程弹窗执行
+    function ssh_exec(exec,title){
+        exec_str=btoa(encodeURIComponent(exec))
+        ajaxPost(web_url+'ssh_exec?exec='+exec_str,{},function(r){
+            var content = '<div style="text-align: left;"><iframe id="shell_iframe" allowtransparency="true" style="background-color=transparent" frameborder="0" width="650" height="350" scrolling="no" src="'+document.location.origin+':62312"></iframe></div>'
+            $.dialog({
+                width: 700,
+                top:0,
+                title: title,
+                content: content,
+                lock: true,
+                beforeunload: function() {xxx_box_exec('update_box_list_json','box_list',document.getElementById("box_list_update"));}
+            });
+        })
+    }
+    //运行
+    function xxx_exec(xxx_exec_id){
+        ajaxPost(web_url+'xxx_exec?xxx_save_id='+xxx_exec_id,{},function(r){alert_box(r)})
+    }
+
+    //刷新扩展模式状态
+    function box_mode_update(mode){
+        if (mode) {
+            document.getElementById("xxx_mode_checkbox_ram").checked=true
+            document.getElementById("xxx_mode_checkbox_rom").checked=false
+            but1=document.getElementById("xxx_down_all_tar_url_butt")
+            but1?but1.style.display="none":""
+            but2=document.getElementById("xxx_source_list_url_butt")
+            but2?but2.style.display="inline-block":""
+            document.getElementById("xxx_mode_text").innerHTML="模式：内存模式"
+        }else{
+            document.getElementById("xxx_mode_checkbox_ram").checked=false
+            document.getElementById("xxx_mode_checkbox_rom").checked=true
+            but1=document.getElementById("xxx_down_all_tar_url_butt")
+            but1?but1.style.display="none":""
+            but2=document.getElementById("xxx_source_list_url_butt")
+            but2?but2.style.display="inline-block":""
+            document.getElementById("xxx_mode_text").innerHTML="模式：磁盘模式"
+        }
+    }
+    window.history.replaceState(null, null, window.location.href);
+    function open_code() {
+        var content = `
+            <form method="post" action="#">
+                <input type="text" name="code" value="activate" style="display:none">
+                序列号：<input type="text" name="user" value="<%=luci.sys.exec("nvram get SN")%>" style="width:150px;margin:0 10px 0 10px">
+                激活码：<input type="text" name="key" value="<%=luci.sys.exec("[ -n \"$(uci -s get lyq.VK)\" ]&& echo '******************************************************************' || echo ''")%>" style="width:180px;margin:0 10px 0 10px">
+                <input type="submit" style="float: right;width: 72px;" value="验证"><br><br>
+                <div>由于持续开发维护不易，原本插件功能不变，后续新增插件需高级版使用。</div>
+                <div>高级版的激活码绑定的是设备，重置和刷机后都可以使用，不限次数！</div>
+                <div>免费版插件：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getboxnum")%>个，高级版插件：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getvipboxnum")%>个</div>
+                <button info="" style="width: auto;margin: 10px;" onclick="window.open('https://www.ldxp.cn/item/jw2rd0')">获取激活码(一)</button>
+                <button info="" style="width: auto;margin: 10px;" onclick="window.open('https://www.snfaka.com/details/0C686D95')">获取激活码(二)</button>
+                <button info="" style="width: auto;margin: 10px;" onclick="window.open('http://v6.v2024h.mom/find')">查询激活码</button>
+                <button info="" style="width: auto;margin: 10px;" onclick="window.open('http://v6.v2024h.mom')">提取激活码</button><br>
+                <table border="1" style="width: 100%;">
+                    <tbody id="xxxinfolist"></tbody>
+                </table>
+                <div>不建议小米BE6500 BE7000 AX9000 BE10000 万兆 以外的机型激活，其他设备空间有限，不能同时安装较多插件。</div>
+            </form>
+        `
+        $.dialog({
+            width: 700,
+            title: '小米路由器 - 扩展功能 - 验证高级版',
+            content: content,
+            lock: true
+        });
+
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+"/api/xxxapi/get_xjc?p=vipxxxlist.json"
+			$.getJSON(urlx2,{}, function( rsp ) {
+                dgi="<tr><td style='width: 150px;'>高级插件名</td><td>功能说明</td></tr>"
+                for(var i = 0; i < rsp["list"].length; i++){
+                    dgi=dgi+"<tr><td style='width: 150px;'>"+rsp["list"][i]["name"]+"<br>("+rsp["list"][i]["title"]+")</td><td style='text-align: left;'>"+rsp["list"][i]["content"]+"</td></tr>"
+                }
+                document.getElementById('xxxinfolist').innerHTML=dgi
+            });
+        // ajaxPost(("<%=REQUEST_URI%>").split('/web/')[0]+"/api/xxxapi/get_xjc?p=vipxxxlist.json", function(rsp){
+        //     dgi="<td style='width: 150px;'>高级插件名</td><td>功能说明</td>"
+        //     dgi=dgi+"<td style='width: 150px;'>"+JSON.parse(rsp)["list"][1]["name"]+"</td><td>功能说明</td>"
+        //     document.getElementById('xxxinfolist').innerHTML=dgi
+        // });
+
+
+    }
+    var box_view;
+    //打开主窗口
+    function openbox(e) {
+        var content = $('#box_all').html()
+        box_view=$.dialog({
+            width: 800,
+            height: 580,
+            title: '小米路由器 - 扩展功能 - (<%if luci.sys.exec(xxx_path.."/xxxcon/xxxbox getxxxver int") == "1" then%>高级版<%else%><a style="cursor: pointer;" onclick="open_code()">验证高级版</a><%end%>)',
+            content: content,
+            lock: true
+        });
+        //提示功能
+        $.extend({msg:function(n){var e={type:"default",content:"提示内容",time:"2000",autoClose:!0,onClose:function(){},define:function(){}};"string"==typeof n&&(e.content=n),"object"==typeof n&&(e=$.extend({},e,n));let i=30;$(".header_tps").length>0&&(i=90);var t,o,a,s=`<div class="YiJia_message messageFadeInDown" style="top:${i}px">\n<div class="YiJia_message_main YiJia_bg_default">\n<div class="YiJia_content">${e.content}</div>\n</div>\n</div>`,d=$("body"),m=$(s);o=function(){m.addClass("messageFadeOutUp"),m.one("webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend",function(){a()})},a=function(){m.remove(),e.onClose(e),clearTimeout(t)},$(".YiJia_message").remove(),d.append(m),m.css({"margin-left":"-"+m.width()/2+"px"}),m.one("webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend",function(){m.removeClass("messageFadeInDown")}),e.autoClose&&(t=setTimeout(function(){o(),e.define()},e.time))}});
+        //初始索引为1
+        box_index=1;//box菜单索引
+        //加载图表
+        loadJS(("<%=REQUEST_URI%>").split('/web/')[0]+"/api/xxxapi/get_xjc?p=Chart.min.js", function(){ create_chart(); });
+        //加载防火墙说明
+        ajaxPost(("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_xjc?p=fir_data.txt',{},function(rsp){ document.getElementById("firewall_text").innerHTML=rsp});
+        //加载网络说明
+        ajaxPost(("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_xjc?p=net_data.txt',{},function(rsp){ document.getElementById("net_text").innerHTML=rsp});
+        //加载组件
+        ajaxPost(("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/get_xjc?p=dream-ui.min.css',{},function(rsp){ loadStyle(rsp) })
+        //获取系统信息
+        get_sys_info('sys');
+        //获取最新数据
+        xxx_data_sort(0)
+        //连接到控制台
+        document.getElementById("shell_iframe").src = document.location.origin+":57689"
+        //获取MAC信息
+        <%
+            local remote_addr = luci.http.getenv("REMOTE_ADDR") or ""
+            local mac = luci.sys.net.ip4mac(remote_addr) or ""
+            if mac == "00:00:00:00:00:00" then mac = luci.sys.exec("cat /tmp/dhcp.leases | grep -n ' "..remote_addr.." ' | awk '{print $2}' | tr -d '\\n'") end
+            if mac == "00:00:00:00:00:00" then mac = "" end
+        %>
+        ajaxPost(web_url+'get_dhcp_mac',{},function(mac_json_data){mac_list=JSON.parse(mac_json_data);mac_list.push({"time":"1749999999_1111","data":"<%=mac%>","tag":"0.0.0.0","name":"本机","title": "","class": "mac"});})
+        //获取防火墙信息
+        upfir()
+        //获取路由表信息
+        upnet()
+        //载入软件中心
+        box_load('xxx_box')
+        //切换导航页
+        showfunc('main_nav')
+        //扩展模式调整
+        //box_mode_update("<%=luci.sys.exec("echo -n $(uci get lyq.xxx_set_radio_mode)")%>"=="ram"?true:false)
+        main_boxlist_updiskinfo()
+        //点击特效
+        click_tx();
+        //加载设置
+        update_xxx_box("main_setlist");
+        //加按钮
+        document.getElementsByClassName('panel panel-dialog d-is-open')[0].innerHTML=document.getElementsByClassName('panel panel-dialog d-is-open')[0].innerHTML+'<span onclick="open_help()" style="display: block;position: absolute;top: 12px;height: 20px;width: 20px;text-align: center;color: #fff;cursor: pointer;right: 60px;background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAAKlBMVEUhlvMflu8glfIglfIhlvNruffb7v3p9P6Vzfn7/v/K5vy/4fxTrvZ+wviFUpShAAAABHRSTlMAILz5B8+LdgAAAF5JREFUGNNjYCASMCq7gIGRAJDD5AIFCkAOM4xjAOSwwDgOUE5YBYLjMWvnEjjHfYr7FDjHbY4nguNyZmULguM1B8k09xIkjkcLEucksjLXK0gcuHNQHIriBRTPEQUAUuQwEWqF1TgAAAAASUVORK5CYII=) center;"></span><span onclick="open_about()" style="display: none;position: absolute;right: 30px;top: 13px;height: 22px;width: 22px;text-align: center;color: #fff;cursor: pointer;right: 60px;background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAr0lEQVR4nGNgGAWkALlJ7xUVpn7aqzD100/FaZ//k4JBehSmfdojP/29Ak4LQIaTarAiukXTPu3BZwHJLlfE4hOcFlBquCIUk2WB/twv/2+/+/v/1ru///XmfKG+Be4rvv6HAbcVX6lvgeK0z/+zdn7/n7njO22CSJHWcaA47TM8iEYt+D98g2j6uZ9gPHiTqQKtCzsF6hTXu3FaAKosQArIrnCmftqFt8IZBQxYAAAno20GhXtzFwAAAABJRU5ErkJggg==) center;"></span><span onclick="box_view.close()" class="close d-close"></span><span onclick="open_about()" style="display: none;position: absolute;right: 30px;top: 13px;height: 22px;width: 22px;text-align: center;color: #fff;cursor: pointer;right: 60px;background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAr0lEQVR4nGNgGAWkALlJ7xUVpn7aqzD100/FaZ//k4JBehSmfdojP/29Ak4LQIaTarAiukXTPu3BZwHJLlfE4hOcFlBquCIUk2WB/twv/2+/+/v/1ru///XmfKG+Be4rvv6HAbcVX6lvgeK0z/+zdn7/n7njO22CSJHWcaA47TM8iEYt+D98g2j6uZ9gPHiTqQKtCzsF6hTXu3FaAKosQArIrnCmftqFt8IZBQxYAAAno20GhXtzFwAAAABJRU5ErkJggg==) center;"></span><span onclick="box_view.close()" class="close d-close"></span>'
+        $(function(){
+            $(".radio").find('input').click(function(){
+                $(this).parent('label').siblings('label').find('input').removeAttr('checked') && $(this).attr('checked', 'checked');
+                console.log($('input[type="radio"]:checked').val())
+            })
+        })
+        document.getElementById("net_title").querySelector('[class="xxx_title2"]').click()
+        document.getElementById("fir_title").querySelector('[class="xxx_title2"]').click()
+    };
+
+    function open_donate() {
+    donatediv=`
+            <div>
+                <div style="float: left;">
+                    <img style="width: 240px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsAQAAAABRBrPYAAACLUlEQVRo3u2Z4Y3sIAyE6YASKIXSoLSUQgnpgMeMTRLusavV6nS/xtHuSZfvl9fD2Cb0T+IMwoT9LVYDo/Qjd3yO1Bv+kcZbRhS2xQoyWMsR8hHwSVdWo38L22IjwWXAgPi6hdRGjtMZR4KjsPeYpXeQoyhTY1kK+wCDlgcKOSPBLEhh7zCXcz48vwNLr1UvbLUPYniGlu3Zuowwxx5x+Dk4fffyEWFfY/wVCr8znAZnZYLRQPB4hL3AeFQit+wHA4y5G0fJR2E7DFHZ1Vh2c3Mw9evAFPY/NoA6m0H6DAgW5nhtdSlsg9GeXc1obDLMecq5X+4s7CdmVVnn0AbbYEm2aA2hsBdY9ekD0Egvh7bG9KKluVQvbMGY2wLWho88m5WG0YOcsD3mW4JM87Vz0MvSQtj3mB2VxZy524CXmvfQo36fqhd2Y2wFWbtIr+e3u+rZDArbYsjt+EOTAYfNFddXUPx5qV7YinH8sLrMc+Bt3JaiHu/pQ9iK+SFYs5Wkd9GsTRJB2B4r3gxOMXNNYBsWr0thW4xGUYnNxVTzm7Sw2oewJ1Z9KYWwqW2eg4vLCFuwGYfNHt2WzHavcd7pFfYd5j9AOe5esPsOP55LVyNswah6v2vjfNfMZ2gzzx2XsBWrtkywHXPGHaV10Zfshb3DHsv54A59xrvZFvYCy7ad5/LqYcxR2AvM5HxwcWVl6fca57K8ErZi0z5yt2bw6gSju66wHfZBCBP2O9g/VmDEhBFW32sAAAAASUVORK5CYII="><br>微信扫码“打赏”支持！
+                </div>
+                <div>
+                    <img style="width: 240px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsAQAAAABRBrPYAAAB9UlEQVRo3u2ZQY7CMAxFjbpgyRF6FI5Gj8ZReoQuuxjVk287aWEYRBOQZqSfDTR53cTu948j+sqYhBix/4yN4uOsc4e5a6/6hed1gVgDdrKdHtJ0t4hcrv0knT3nBWJN2Jy2Gk/xm5Y9CmWB2Bswi4IO0qdsX+SixN6KJek4aFpOs2kQexeWNeSYMC94cngiNcR2YbnQGWYSjT/Db4WS2C7sdmD+FJt/49+I1WG+2UmaBbkdBmMp0XBRIfZhTKejmr0TuDv/BuD3MLpVaojVYe7qti7aKqbjm2+BWB0mUSDHnOzuomH3ZPstEKvBsoKfzTynI7ZjF8wiPEqsBUtRMPDax6Zj4oGGEGvBTEMcdw2JZL+LArGdmB/5kNTov1nnIpJ8wvurwSBWhyGnveId4KLdt+m91BCrwrDpXgFdSzT8G/pv1jE6E2vCPLmlnyPZPQrQEoSnRIFYHabRuZjzIe+Y/Vu3agixD2OR8qOvIvXLGXCR9QaKWA1Whit52nQ7nKCPZB8HsSZs9A1HF1R1bRCVG6gsNcTqsJPFIF+RiLnniMJto4NYFVYu+KxQoq2J135KDbEmzOzHen8KP7JNcmJtWLQ3xXzfENKyMRjEqrDQEK+A+XCCs6Bsu6DE6rBSASXam9Z/c6PxqFAS24O9MIgR+4vYNzgv30QjGPCeAAAAAElFTkSuQmCC"><br>支付宝扫码“打赏”支持！
+                </div>
+            </div>`
+            $.dialog({
+                width: 550,
+                height: 370,
+                title: '小米路由器 - 扩展功能 - 打赏',
+                content: donatediv,
+                lock: true
+            });
+    }
+    function open_about() {
+        var tmp=`<label>型号:</label>
+            <input type="text" name="model" value="" style="width:145px;" readonly>
+            <label>系统:</label>
+            <input type="text" name="ver" value="" style="width:145px;" readonly>
+            <label>版本:</label>
+            <input type="text" name="xxxver" value="" style="width:145px;" readonly>
+            <input type="text" name="usersn" value="" style="width:145px;display:none;" readonly>
+            <textarea placeholder="请输入需要反馈的内容" style='width:600px;height:65px;margin-top: 5px;'></textarea>
+            <label>文件:</label>
+            <input type="file" name="file" title="上传文件大小请勿超过10MB！" style="width:180px;margin-top: 3px;">
+            <input type="submit" style="float: right;width: 72px;" value="提交反馈">`
+        var content = `
+        <form action="#" style="text-align: left;margin: 10px;" onsubmit="return false;" id="comment_form_new" method="post">
+            <div style="margin-bottom: 2px;">如果你有什么好的建议或者意见，可以在下面方式反馈给我，我将尽我所能的改进完善。</div>
+            QQ邮箱：xxxbox@vip.qq.com<br>
+            QQ群聊：134374713<br>
+            github-issues：https://github.com/V2023H/xxx_box/issues<br>
+            反馈内容格式务必遵守以下格式：<br>
+            <textarea placeholder="需要反馈的内容" style='width:600px;height:100px;margin-top: 5px;'>
+当前时间：`+getSystemTime()+`
+设备型号：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getmodel")%>
+系统版本：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getver")%>
+扩展版本：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getxxxver")%>
+用户信息：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getuserinfo")%>
+需要反馈的内容：
+            </textarea>
+
+        </form>
+        <div style="background-color: #F5F5F5;border-radius: 5px;">
+            <div>
+                <div style="padding-top: 10px;margin-top: 20px;">欢迎使用扩展功能页。如果您喜欢我的开发，请考虑支持我所做的工作。谢谢。</div>
+                <button onclick="window.open('https://www.ldxp.cn/item/1vlwex')" style="width:120px;margin: 10px;" info="">支持一下，打赏</button>
+            </div>
+        </div>
+        `
+        $.dialog({
+            width: 700,
+            height: 400,
+            title: '小米路由器 - 扩展功能 - 反馈',
+            content: content,
+            lock: true
+        });
+
+    }
+    function open_help() {
+        var content = `
+        <div style="text-align: left;">
+            1.小米扩展功能不会破坏系统功能正常运行，只需留意临时空间，内存空间，安装目录的容量。<br>
+            <br>
+            2.插件会长期不定时更新，若有需要更多插件或者功能，BUG，都可以<a onclick="open_about()">提交反馈</a>给我。<br>
+            <br>
+            3.插件功能都经我的设备测试，不代表在每台设备都正常运行，部分DNS类插件同时安装会冲突。<br>
+            <br>
+            4.建议在有USB接口的路由器安装该功能，无USB的小米路由器普遍空间较小，无法安装很多插件。<br>
+            <br>
+            5.扩展功能只用空间占用不多，如果使用不上，这里可以<a onclick="xxxboxfunc('uninstall')">卸载扩展</a>或者<a onclick="xxxboxfunc('stop')">暂时停用功能</a>。<br>
+            <br>
+        </div>
+        <div style="border: 1px #000 solid;border-radius: 5px;">
+            <div style="margin-top: 10px;">欢迎使用扩展功能页。如果您喜欢我的开发，请考虑支持我所做的工作。谢谢。</div>
+            <button onclick="window.open('https://www.ldxp.cn/item/1vlwex')" style="width:120px;margin: 10px;border-color: rgb(255, 180, 0);background: rgb(255, 180, 0);" info="">支持一下，打赏</button>
+            <br>
+        </div>
+        `
+        $.dialog({
+            width: 700,
+            height: 400,
+            title: '小米路由器 - 扩展功能 - 帮助',
+            content: content,
+            lock: true
+        });
+
+    }
+    function getSystemTime() {
+        var time = new Date();
+        var year = time.getFullYear();
+        var month = time.getMonth() + 1;
+        var date = time.getDate();
+        var h = time.getHours();
+        h = h < 10 ? '0' + h : h;
+        var m = time.getMinutes();
+        m = m < 10 ? '0' + m : m;
+        var s = time.getSeconds();
+        s = s < 10 ? '0' + s : s;
+        console.log(year + "年" + month + "月" + date + "日 " + h + ":" + m + ":" + s);
+        return(year + "年" + month + "月" + date + "日 " + h + ":" + m + ":" + s) ;
+    }
+    if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(search, replacement) {
+            var target = this;
+            // Ensure the search is a string and escape special characters for use in a regular expression
+            return target.replace(new RegExp(search.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), replacement);
+        };
+    }
+
+    //卸载或者停用扩展功能
+    function xxxboxfunc(mode){
+        if( mode == "uninstall" ){
+            var dialog = $.dialog({
+                id : "confirm",
+                width: 390,
+                title : '确认信息',
+                content : '是否确认卸载，卸载后所有插件将被移除并重启，若需重装建议先重置系统？',
+                ok: function(){
+                    url=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/xxxboxfunc?enabled=uninstall&state=start'
+                    $.msg("正在卸载扩展功能...")
+                    ajaxPost( url,{} , function( r ) {$.msg("卸载完成，正在重启系统...")})
+                    dialog.close()
+                },
+                cancel: function () {dialog.close();}
+            }).lock();
+        }else{
+            var dialog = $.dialog({
+                id : "confirm",
+                width: 390,
+                title : '确认信息',
+                content : '是否确认停用扩展功能并重启，用telnet连接路由器输入/data/xxxcon/autostart enadled重新启用扩展功能？',
+                ok: function(){
+                    url=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/xxxboxfunc?enabled=self&state=stop'
+                    $.msg("正在停用扩展功能...")
+                    ajaxPost( url,{} , function( r ) {$.msg("已停用，正在重启系统...")})
+                    dialog.close()
+                },
+                cancel: function () {dialog.close();}
+            }).lock();
+        }
+    }
+    //route_data转多维数组
+    route_list=[];
+    route_tbody_innerHTML='';
+    function route_data_to_arr(route_data){
+        if(route_tbody_innerHTML==''){route_tbody_innerHTML=document.getElementById("route_tbody").innerHTML}
+        document.getElementById("route_tbody").innerHTML=route_tbody_innerHTML
+        route_list_temp=route_data.split('\n\n')
+        for(var i1 = 0; i1 < route_list_temp.length; i1++){
+            if(route_list_temp[i1].trim()!=""){
+                route_list_temp2=route_list_temp[i1].split('\n')
+                if(route_list_temp2.length>2){
+                    route_list_item2 = new Array();
+                    for(var i2 = 0; i2 < route_list_temp2.length; i2++){
+                        route_list_temp2[i2]=route_list_temp2[i2].trim().replaceAll("  "," ").replaceAll("  "," ").replaceAll("  "," ").replaceAll("  "," ").replaceAll("  "," ").replaceAll("  "," ")
+                        route_list_temp3=route_list_temp2[i2].split(' ')
+                        route_list_item1 = new Array();
+                        for(var i3 = 0; i3 < route_list_temp3.length; i3++){
+                            route_list_item1[i3]=route_list_temp3[i3]
+                        }
+                    route_list_item2[i2]=route_list_item1
+                    }
+                route_list[i1]=route_list_item2
+                }
+            }
+        }
+
+        table_html=""
+        table_tr_list='<tr onclick="new_val(this,\'route\')" title="编辑" onmouseover="this.style.backgroundColor=\'#eee\'" onmouseout="this.style.backgroundColor=\'#fff\'"><th style="width:18%;text-align: center;"><div>X0</div></th> <th style="width:10%;text-align: center;"><div>X1</div></th> <th style="width:10%;text-align: center;"><div>X2</div></th> <th style="width:27%;text-align: center;"><div>X3</div></th><th style="width:18%;text-align: center;"><div>X4</div></th><th style="width:27%;text-align: center;"><div>X7</div></th><th style="width:27%;text-align: center;display:none;"><div>X8</div></th> </tr>'
+        for(var i1 = 0; i1 < route_list.length; i1++){
+            if (route_list[i1]!=undefined){
+                for(var i2 = 0; i2 < route_list[i1].length; i2++){
+                    if (route_list[i1][i2][0]=="Kernel" || route_list[i1][i2][0]=="Destination" ){continue;}
+                    table_tr_list_temp=table_tr_list
+                    if(i2!=1){
+                        for(var i3 = 0; i3 < route_list[i1][i2].length; i3++){
+                            if(route_list[i1][i2][i3]!="/*"){
+                                table_tr_list_temp=table_tr_list_temp.replace("X"+i3,route_list[i1][i2][i3])
+                            }else{
+                                table_tr_list_temp=table_tr_list_temp.replace("<tr>",'<tr title="备注信息：/*'+route_list[i1][i2].join(" ").split('/*')[1]+'">')
+                                break;
+                            }
+                        }
+                        table_tr_list_temp=table_tr_list_temp.replace("<div>X4</div>","").replace("<div>X5</div>","").replace("<div>X6</div>","")
+                        if(route_list[i1][i2][0]==""){ break; }
+                        table_html=table_html+table_tr_list_temp
+                    }
+                }
+                table_html=table_html+get_th_add_string("route",table_tr_list.split("</th>").length)
+            }
+        }
+        document.getElementById("route_tbody").innerHTML=document.getElementById("route_tbody").innerHTML+table_html
+
+    }
+    function get_th_add_string(str,int){
+        intadd=parseInt(int/2)
+        string='<tr onclick="new_val(this,\''+str+'\')" title="新增" onmouseover="this.style.backgroundColor=\'#eee\'" onmouseout="this.style.backgroundColor=\'#fff\'">'
+        for(var i = 1; i < int; i++){ string=string+(i==intadd?'<th style="border:0;text-align: center;">新增</th>':'<th style="border:0;"></th>');}
+        string=string+'</tr>'
+        return string;
+    }
+    //切换路由表编辑状态
+    function route_new_val(obj){
+        if(obj.title=="编辑"){
+            document.getElementsByName("c_route_Destination")[0].value=obj.cells[0].innerText
+            document.getElementsByName("route_Destination")[0].value=obj.cells[0].innerText
+            document.getElementsByName("route_Genmask")[0].value=obj.cells[2].innerText
+            document.getElementsByName("route_Gateway")[0].value=obj.cells[1].innerText
+            document.getElementsByName("route_Flags")[0].value=obj.cells[3].innerText
+            document.getElementsByName("route_Metric")[0].value=obj.cells[4].innerText
+            document.getElementsByName("c_route_nameDestination")[0].setAttribute('readOnly', "readOnly")
+        }else{
+            document.getElementsByName("c_route_Destination")[0].removeAttribute('readOnly')
+            document.getElementsByName("c_route_Destination")[0].value=''
+        }
+        document.getElementsByName("route_sub")[0].value=(obj.title=="编辑"?"删除":"新增")
+        document.getElementsByName("route_save")[0].style.display=(obj.title=="编辑"?"inline-block":"none")
+    }
+
+    //切换编辑状态
+    function new_val(obj,confname){
+        if(eval(confname+"_tbody_innerHTML").indexOf(obj.innerHTML)!=-1){return;}//如果是第一个则不改变
+        if(obj.title=="编辑"){
+            inputall=document.getElementById(confname+'_form_new').querySelectorAll('input')
+            document.getElementsByName(confname+"_cname")[0].value=obj.cells[0].innerText
+            for(var i = 0; i < inputall.length-3; i++){ inputall[i+1].value=obj.cells[i].innerText}
+            document.getElementsByName(confname+"_name")[0].setAttribute('readOnly', "readOnly")
+        }else{
+            document.getElementsByName(confname+"_name")[0].removeAttribute('readOnly')
+            document.getElementsByName(confname+"_name")[0].value=''
+        }
+        document.getElementsByName(confname+"_sub")[0].value=(obj.title=="编辑"?"删除":"新增")
+        document.getElementsByName(confname+"_save")[0].style.display=(obj.title=="编辑"?"inline-block":"none")
+    }
+
+    //ip验证
+    function isValidIPv4(ip) {
+    const regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return regex.test(ip);
+    }
+
+    //开始数据刷新
+    xxx_running=false;
+    function xxx_data_sort(code){
+        if(!xxx_running){
+            urlx2=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/xxx_json'
+			$.getJSON( urlx2,{} , function( xxx_json_data ) {xxx_json_data_sort(code,xxx_json_data);xxx_running=false;});
+            xxx_running=true;
+        }
+    }
+    dialog_box_ul_bak = 0;dialog_mac_bak = 0;dialog_exc_bak = 0;dialog_wxexc_bak = 0;kfz="开发中...";szx="请状态调整设置...";colors = ["#999","#30bf30","#2673bf"];
+    xxx_list=""
+
+    //整理数据刷新
+    function xxx_json_data_sort(code, xxx_list_data){
+        xxx_list=xxx_list_data;
+        if(!document.getElementById("dialog_box_ul")){return;}
+        var dialog_box_nav = document.getElementById("dialog_box_nav");dialog_box_ul = document.getElementById("dialog_box_ul");dialog_exc = document.getElementById("dialog_exc");dialog_wxexc = document.getElementById("dialog_wxexc");dialog_mac = document.getElementById("dialog_mac");
+        if (dialog_box_ul_bak == 0){dialog_box_ul_bak = dialog_box_ul.innerHTML;}
+        if (dialog_mac_bak == 0){dialog_mac_bak = dialog_mac.innerHTML;}
+        if (dialog_exc_bak == 0){dialog_exc_bak = dialog_exc.innerHTML;}
+        if (dialog_wxexc_bak == 0){dialog_wxexc_bak = dialog_wxexc.innerHTML;}
+        var dialog_box_ul_HTML="";dialog_mac_HTML="";dialog_exc_HTML="";dialog_wxexc_HTML="";
+        for(var i = 0; i < xxx_list["xxx"].length; i++){
+            if (document.getElementById("xxx_set_checkbox_run").checked && xxx_list["xxx"][i]["tag"]!="0" && xxx_list["xxx"][i]["tag"]!="66666" ){continue;}
+            if (document.getElementById("xxx_set_checkbox_norun").checked && xxx_list["xxx"][i]["tag"]=="0"){continue;}
+            if (document.getElementById("xxx_set_checkbox_unknown").checked && xxx_list["xxx"][i]["tag"]=="66666"){continue;}
+            if(xxx_list["xxx"][i]["class"]=="box"){
+                xxx_list["xxx"][i]["data"].indexOf('javascript') ? blank="_blank" : blank=""
+                //xxx_list["xxx"][i]["data"]=xxx_list["xxx"][i]["data"].replaceAll('{$ip$}',document.domain)
+                var url_prot = xxx_list["xxx"][i]["tag"]
+                var prot_state_color = (url_prot=="0"?"":"")+(url_prot!="0" && url_prot!="66666"?"success":"")+(url_prot=="66666"?"info":"")
+                dialog_box_ul_HTML=dialog_box_ul_HTML+"<button onclick='window.open(\""+xxx_list["xxx"][i]["data"].replace("{$ip$}",document.domain)+"\",\""+blank+"\")' "+prot_state_color+"><span>"+xxx_list["xxx"][i]["name"]+"</span></button>"
+            }
+            if(xxx_list["xxx"][i]["class"]=="mac"){
+                dialog_mac_HTML=dialog_mac_HTML+"<form method=\"post\" action=\"#\">&nbsp;&nbsp;主机名：<input readonly=\"readonly\" type=\"text\" name=\"title\" value=\""+xxx_list["xxx"][i]["name"]+"\" style=\"width:150px;\">&nbsp;&nbsp;mac：<input readonly=\"readonly\" type=\"text\" name=\"hert\" value=\""+xxx_list["xxx"][i]["data"]+"\" style=\"width:250px;\">&nbsp;&nbsp;<br><br></form>"
+            }
+            if(xxx_list["xxx"][i]["class"]=="exc"){
+                dialog_exc_HTML=dialog_exc_HTML+"<div style=\"padding-top:10px;display:inline-block\"><button onclick=\"xxx_exec('"+(i+10000)+"')\" class=\"mesh_buttons xxx_exec_butt\" value=\""+xxx_list["xxx"][i]["data"]+"\">"+xxx_list["xxx"][i]["name"]+"</button>&nbsp;</div>";
+            }
+            if(xxx_list["xxx"][i]["class"]=="wxexc"){
+                butt_name=(xxx_list["xxx"][i]["name"]=="白名单"?"白:"+xxx_list["xxx"][i]["data"]:xxx_list["xxx"][i]["name"])
+                dialog_wxexc_HTML=dialog_wxexc_HTML+"<div style=\"padding-top:10px;display:inline-block\"><button class=\"mesh_buttons xxx_exec_butt\" >"+butt_name+"</button>&nbsp;</div>";
+            }
+        };
+        if (code==1 || code==0){dialog_box_ul.innerHTML=dialog_box_ul_HTML+dialog_box_ul_bak;}
+        if (code==2 || code==0){dialog_mac.innerHTML=dialog_mac_HTML+dialog_mac_bak;}
+        if (code==3 || code==0){dialog_exc.innerHTML=dialog_exc_HTML+dialog_exc_bak;}
+        if (code==4 || code==0){dialog_wxexc.innerHTML=dialog_wxexc_HTML+dialog_wxexc_bak;}
+    }
+
+    function wxexc_wxskadi2(){
+        if(typeof wxexc_wxskadi === "function") {
+            wxexc_wxskadi()
+        } else {
+            $.msg("目前没有安装skadi，无法生效。")
+        }
+    }
+
+    function to_classtext(classstring){
+        switch (classstring) {
+            case "shell":
+                return "命令";
+            case "terminal":
+                return "终端";
+            case "service":
+                return "服务";
+            case "boxfunc":
+                return "功能";
+            case "dockerd":
+                return "镜像";
+            case "node":
+                return "插件";
+            case "other":
+                return "其他";
+            default:
+                return "未知";
+        }
+    }
+    function to_classtext2(classstring){
+        switch (classstring) {
+            case "shell":
+                return "在终端使用的命令，建议会用终端的安装！";
+            case "terminal":
+                return "在终端使用的GUI，建议会用终端的安装！";
+            case "service":
+                return "web管理的插件！";
+            case "boxfunc":
+                return "此插件安装后在功能页使用！";
+            case "dockerd":
+                return "此功能基于docker，先要安装开启docker！";
+            case "node":
+                return "此功能基于node，先要安装开启node！";
+            case "other":
+                return "其他";
+            default:
+                return "未知";
+        }
+    }
+    function xxx_sys_1(obj) { if(window.confirm("软件中心加载异常点这里修复，然后在软件中心刷新即可修复。")){xxx_box_exec('down_xxx_box_json',"",obj);}}
+    function xxx_sys_2(obj) { xxx_box_exec('xxx_update',"",obj);}
+    function xxx_sys_3(obj) { if(window.confirm("系统重置会丢失所有数据，重置后用Telnet安装扩展,确定重置吗？")){xxx_box_exec('reinstall_init',"",obj);}}
+    function xxx_sys_4(obj) { if(window.confirm("不会影响扩展功能，只会卸载全部软件，确认卸载吗？")){xxx_box_exec('uninstall_all',"",obj);}}
+    function xxx_sys_5(obj) { if(window.confirm("需要重启网络吗？")){xxx_box_exec('restart_network',"",obj);}}
+    function xxx_sys_6(obj) { if(window.confirm("需要重启路由器吗？")){xxx_box_exec('restart_system',"",obj);}}
+    function xxx_sys_7(obj) { if(window.confirm("需要重启网络防火墙吗？")){xxx_box_exec('restart_firewall',"",obj);}}
+    //打开编辑窗口
+    var box_box_view;
+    function openbox_edit(title,obj_name,obj_id,xxx_class,sort_code) {
+        box_box_view=$.dialog({
+            width: 600,
+            top:0,
+            height:620,
+            title: title,
+            content: $('#'+obj_name).html(),
+            lock: true,
+            beforeunload: function() {xxx_data_sort(sort_code)}
+        });
+        exe_clash=xxx_class=="mac"?"mac":"box"
+        eval(exe_clash + "_edit_form_sort('"+obj_id+"','"+xxx_class+"')");
+    };
+
+    //box编辑窗口数据整理
+    function box_edit_form_sort(obj_id,xxx_class) {
+        var dialog_box_edit = document.getElementById(obj_id);
+        var inner="";div_ele_num=0;
+        for(var i = 0; i < xxx_list["xxx"].length; i++){
+            if (xxx_list["xxx"][i]["class"]==xxx_class){
+                div_ele_num++
+                div_ele_display=(div_ele_num>xxx_page_ele_count?"none":"block")
+                inner = inner+"<div style=\"display:"+div_ele_display+";\"><input type=\"text\" name=\"title\" value=\""+xxx_list["xxx"][i]["title"]+"\" style=\"display:none;\"><input type=\"text\" name=\"time\" value=\""+xxx_list["xxx"][i]["time"]+"\" style=\"display:none;\">名称：<input type=\"text\" name=\"name\" value=\""+xxx_list["xxx"][i]["name"]+"\" style=\"width:70px\">&nbsp;<input type=\"text\" name=\"class\" value=\""+xxx_list["xxx"][i]["class"]+"\" style=\"display:none;\">：<input type=\"text\" name=\"data\" value=\""+xxx_list["xxx"][i]["data"]+"\" style=\"width:200px\">&nbsp;：<input type=\"text\" name=\"tag\" value=\""+xxx_list["xxx"][i]["tag"]+"\" style=\"width:70px\"> <input onclick=\"this.parentElement.remove();xxx_page('"+obj_id+"',xxx_page_index,'div')\" type=\"submit\" name=\"butt_name\" value=\"删除\"><br><br></div>";
+            }
+        };
+        var inner=inner+"<div style='text-align: left;margin: 0 12px;'>"
+        var inner=inner+"<a style='user-select: none;' onclick='xxx_page(\""+obj_id+"\",\"-\",\"div\")'><button>上一页</button></a>&nbsp;&nbsp;"
+        var inner=inner+"&nbsp;&nbsp;<a style='user-select: none;' onclick='xxx_page(\""+obj_id+"\",\"+\",\"div\")'><button>下一页</button></a>";
+        var inner=inner+'<button style="float: right;" info onclick="box_form_save(\''+obj_id+'\',\''+xxx_class+'\')">保存</button></div><br>'
+        dialog_box_edit.innerHTML=inner+dialog_box_edit.innerHTML;
+    }
+    //防火墙命令执行
+    function fir_form_exc_sub(exec){
+        $.msg("执行命令尚未完善")
+    }
+    //路由表表单提交
+    function box_route_form(obj){
+        if(buttonsub=="删除" && isValidIPv4(obj.children["route_Destination"].value)==false){$.msg("请检查输入的目标！");return false;}
+        if(buttonsub=="新增" && isValidIPv4(obj.children["route_Destination"].value)==false){$.msg("请检查输入的目标！");return false;}
+        if(buttonsub=="新增" && isValidIPv4(obj.children["route_Genmask"].value)==false){$.msg("请检查输入的掩码！");return false;}
+        ajaxPost(web_url+'route_form_sub?type='+buttonsub,$("#route_form_new").serialize(),function(r){upnet();$.msg(r);})
+        return false;
+    }
+    buttonsub="";
+    net_dialog="";
+    //接口设置表单提交
+    function box_net_form(obj,confname){
+        if(obj.children[confname+"_name"].value==""){$.msg("请检查输入的名称！");return false;}
+        ajaxPost(web_url+confname+'_form_sub?type='+buttonsub,($("#"+confname+"_form_new").serialize()+"&val=v").replace("=null&",'=&'),function(r){
+            net_dialog=$.dialog({
+                id : "net_save",
+                width: 390,
+                title : '确认信息',
+                content : "<textarea id='net_form_text' style='width:300px;height:220px;'>"+r+"</textarea>请核对信息，是否提交？",
+                ok: function(){
+                    url=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/net_save?butt=ok&name='+confname+'&type='+buttonsub+'&data='+btoa(document.getElementById("net_form_text").innerHTML)
+                    ajaxPost(url,'{}',function(r){$.msg("完成");
+                        confname.indexOf('firewall_')==-1?upnet():upfir();
+                        net_dialog.close()
+                    })
+                },
+                cancel: function () {
+                    url=("<%=REQUEST_URI%>").split('/web/')[0]+'/api/xxxapi/net_save?butt=no&name='+confname
+                    ajaxPost(url,'',function(r){$.msg("取消");
+                        confname.indexOf('firewall_')==-1?upnet():upfir();
+                        net_dialog.close();
+                    })
+                }
+            }).lock();
+        })
+        return false;
+    }
+
+    //box新增
+    function box_form_new_xxx(obj_id,xxx_class){
+        div_ele=document.getElementById(obj_id);
+        if (div_ele.children.name.value.trim()=="" || div_ele.children.data.value.trim()==""){$.msg('表单不能留空！');return false;}
+        inner = "<div style=\"display:"+div_ele_display+";\"><input type=\"text\" name=\"title\" value=\"\" style=\"display:none;\"><input type=\"text\" name=\"time\" value=\""+Math.round(new Date())+"_"+Math.floor(Math.random() * 10000)+"\" style=\"display:none;\">名称：<input type=\"text\" name=\"name\" value=\""+div_ele.children.name.value+"\" style=\"width:70px\">&nbsp;<input type=\"text\" name=\"class\" value=\""+div_ele.children.class.value+"\" style=\"display:none;\">：<input type=\"text\" name=\"data\" value=\""+div_ele.children.data.value+"\" style=\"width:200px\">&nbsp;：<input type=\"text\" name=\"tag\" value=\""+div_ele.children.tag.value+"\" style=\"width:70px\"><input onclick=\"this.parentElement.remove();xxx_page(\'box_new\',xxx_page_index,'div')\" type=\"submit\" name=\"butt_name\" value=\"删除\"><br><br></div>";
+        div_ele.innerHTML=inner+div_ele.innerHTML;
+        xxx_page(obj_id,"0",'div')
+    }
+
+    //mac编辑窗口数据整理
+    function mac_edit_form_sort(obj_id,xxx_class) {
+        var dialog_mac_edit = document.getElementById(obj_id);
+        var inner="";div_ele_num=0;
+        for(var i = 0; i < xxx_list["xxx"].length; i++){
+            if (xxx_list["xxx"][i]["class"]==xxx_class){
+                div_ele_num++
+                inner = inner+"<div><input type=\"text\" style=\"display:none;\">主机名:<input type=\"text\" name=\"title\" value=\""+xxx_list["xxx"][i]["title"]+"\" style=\"display:none;\"><input type=\"text\" name=\"tag\" value=\""+xxx_list["xxx"][i]["tag"]+"\" style=\"display:none;\"><input type=\"text\" name=\"time\" value=\""+xxx_list["xxx"][i]["time"]+"\" style=\"display:none;\"><input type=\"text\" name=\"class\" value=\""+xxx_list["xxx"][i]["class"]+"\" style=\"display:none;\"><input readonly=\"readonly\" type=\"text\" name=\"name\" value=\""+xxx_list["xxx"][i]["name"]+"\" style=\"width:90px\">&nbsp;&nbsp;mac：<input readonly=\"readonly\" type=\"text\" name=\"data\" value=\""+xxx_list["xxx"][i]["data"]+"\" style=\"width:220px\">&nbsp;&nbsp;&nbsp;<input type=\"submit\" onclick=\"mac_list.push(xxx_list['xxx']["+i+"]);xxx_list['xxx'].remove(xxx_list['xxx']["+i+"]);mac_edit_form_sort('"+obj_id+"','"+xxx_class+"')\" name=\"butt_name\" value=\"删除\"><br><br></div> ";
+            };
+            mac_list = mac_list.filter(function(item) {return item.data !== xxx_list["xxx"][i]["data"] });
+        };
+        for(var i = 0; i < mac_list.length; i++){
+            if (mac_list[i]["class"]==xxx_class){
+                inner = inner+"<div><input type=\"text\" style=\"display:none;\">主机名:<input type=\"text\" name=\"title\" value=\""+mac_list[i]["title"]+"\" style=\"display:none;\"><input type=\"text\" name=\"tag\" value=\""+mac_list[i]["tag"]+"\" style=\"display:none;\"><input type=\"text\" name=\"time\" value=\""+mac_list[i]["time"]+"\" style=\"display:none;\"><input type=\"text\" name=\"class\" value=\""+mac_list[i]["class"]+"\" style=\"display:none;\"><input readonly=\"readonly\" type=\"text\" name=\"name\" value=\""+mac_list[i]["name"]+"\" style=\"width:90px\">&nbsp;&nbsp;mac：<input readonly=\"readonly\" type=\"text\" name=\"data\" value=\""+mac_list[i]["data"]+"\" style=\"width:220px\">&nbsp;&nbsp;&nbsp;<input type=\"submit\" onclick=\"xxx_list['xxx'].push(mac_list["+i+"]);mac_list.remove(mac_list["+i+"]);mac_edit_form_sort('"+obj_id+"','"+xxx_class+"')\" name=\"butt_name\" value=\"开启\"><br><br></div> ";
+            };
+        };
+        var inner=inner+"<div style='text-align: left;margin: 0 12px;'>"
+        var inner=inner+"<a style='user-select: none;' onclick='xxx_page(\""+obj_id+"\",\"-\",\"div\")'><button>上一页</button></a>&nbsp;&nbsp;"
+        var inner=inner+"&nbsp;&nbsp;<a style='user-select: none;' onclick='xxx_page(\""+obj_id+"\",\"+\",\"div\")'><button>下一页</button></a>";
+        var inner=inner+'<button style="float: right;" info onclick="box_form_save(\''+obj_id+'\',\''+xxx_class+'\')">保存</button></div><br>'
+        dialog_mac_edit.innerHTML=inner;
+        xxx_page(obj_id,"0",'div')
+    };
+
+    //当前页 0开始
+    xxx_page_index=0;
+    //每页行数
+    xxx_page_ele_count=9;
+    //每页数量
+    xxx_page_count=0;
+    //换页
+    function xxx_page(obj_id,index,tag_name){
+        div_ele=document.getElementById(obj_id).getElementsByTagName(tag_name);
+        xxx_page_count=Math.ceil((div_ele.length-1)/xxx_page_ele_count)
+        if (xxx_page_index<=0 && index=="-") {$.msg('处于首页了！');return;};
+        if (xxx_page_index+1>=xxx_page_count && index=="+") {$.msg('处于尾页了');return;};
+        if(index=="+"){xxx_page_index++}
+        else if(index=="-"){xxx_page_index--}
+        else if(index=="-1"){xxx_page_index=(xxx_page_count-1)}
+        else{xxx_page_index=index}
+        page_index=xxx_page_index+1
+        if(obj_id=="xxx_box"){
+            if ( page_index <= 3 ) {
+                innerHTML="<i onclick=\"xxx_page('xxx_box',0,'th')\" data-id=\"1\">1</i>"
+                innerHTML=innerHTML+(2<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',1,'th')\" data-id=\"2\">2</i>":"")
+                innerHTML=innerHTML+(3<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',2,'th')\" data-id=\"3\">3</i>":"")
+                innerHTML=innerHTML+(4<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',3,'th')\" data-id=\"4\">4</i>":"")
+                innerHTML=innerHTML+(5<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',4,'th')\" data-id=\"5\">5</i>":"")
+            } else if ( page_index > xxx_page_count-2 ) {
+                innerHTML=(5<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',"+(xxx_page_count-5)+",'th')\" data-id=\""+(xxx_page_count-4)+"\">"+(xxx_page_count-4)+"</i>":"")
+                innerHTML=innerHTML+(4<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',"+(xxx_page_count-4)+",'th')\" data-id=\""+(xxx_page_count-3)+"\">"+(xxx_page_count-3)+"</i>":"")
+                innerHTML=innerHTML+(3<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',"+(xxx_page_count-3)+",'th')\" data-id=\""+(xxx_page_count-2)+"\">"+(xxx_page_count-2)+"</i>":"")
+                innerHTML=innerHTML+(2<=xxx_page_count?"<i onclick=\"xxx_page('xxx_box',"+(xxx_page_count-2)+",'th')\" data-id=\""+(xxx_page_count-1)+"\">"+(xxx_page_count-1)+"</i>":"")
+                innerHTML=innerHTML+"<i onclick=\"xxx_page('xxx_box',"+(xxx_page_count-1)+",'th')\" data-id=\""+(xxx_page_count-0)+"\">"+(xxx_page_count-0)+"</i>"
+            }else{
+                innerHTML="<i onclick=\"xxx_page('xxx_box',"+(page_index-3)+",'th')\" data-id=\""+(page_index-2)+"\">"+(page_index-2)+"</i>"
+                innerHTML=innerHTML+"<i onclick=\"xxx_page('xxx_box',"+(page_index-2)+",'th')\" data-id=\""+(page_index-1)+"\">"+(page_index-1)+"</i>"
+                innerHTML=innerHTML+"<i onclick=\"xxx_page('xxx_box',"+(page_index-1)+",'th')\" data-id=\""+(page_index-0)+"\">"+(page_index-0)+"</i>"
+                innerHTML=innerHTML+"<i onclick=\"xxx_page('xxx_box',"+(page_index-0)+",'th')\" data-id=\""+(page_index+1)+"\">"+(page_index+1)+"</i>"
+                innerHTML=innerHTML+"<i onclick=\"xxx_page('xxx_box',"+(page_index+1)+",'th')\" data-id=\""+(page_index+2)+"\">"+(page_index+2)+"</i>"
+            }
+            document.getElementById("ui-page-wrapper").innerHTML=innerHTML.replace("data-id=\""+(page_index-0), "class=\"active\" data-id=\""+(page_index-0))
+        }
+        for(var i = 0; i < div_ele.length-(tag_name=="div"?1:0); i++){
+            page_index1=xxx_page_index*xxx_page_ele_count
+            page_index2=(xxx_page_index+1)*xxx_page_ele_count;
+            if (page_index1<=i && i<page_index2)
+            {div_ele[i].style=""}
+            else
+            {div_ele[i].style="display:none;"}
+        }
+        document.getElementById('page_count').innerHTML="共"+xxx_page_count+"页"
+    }
+
+    //保存数据
+    function box_form(){return false;}
+    function box_form_save(obj_id,xxx_class){
+        div_ele=document.getElementById(obj_id);
+        n=0;
+        c=xxx_list["xxx"].length
+        for(var i = 0; i < c; i++){
+            if (xxx_list["xxx"][i-n]["class"]==xxx_class){
+                xxx_list["xxx"].splice(i-n, 1)
+                n++;
+            }
+        };
+        for(var i = 0; i < div_ele.getElementsByTagName("div").length-1; i++){
+            tpm_obj=div_ele.children[i].children
+            if (div_ele.children[i].nodeName="DIV" && tpm_obj.butt_name.value=="删除") {
+                tmp_list={
+                    title: tpm_obj.title.value,
+                    time: tpm_obj.time.value,
+                    name: tpm_obj.name.value,
+                    class: tpm_obj.class.value,
+                    data: (tpm_obj.class.value=="box"?tpm_obj.data.value.replace(document.domain, "{$ip$}"):tpm_obj.data.value),
+                    tag: tpm_obj.tag.value,
+                }
+                xxx_list["xxx"].push(tmp_list)
+            }
+        }
+        form_list=JSON.stringify(xxx_list);
+        form_base64=btoa(encodeURIComponent(form_list))
+        $("[name='xxx_base64']").val(form_base64)
+        xxx_save(1)
+    }
+
+    //切换菜单
+    function showfunc(main_id){
+        var box_all_list = document.getElementById("box_all_ul").getElementsByTagName("li");
+        var dialog_nav_list = document.getElementById("box_html").children;
+        for(var i = 0; i < box_all_list.length; i++){box_all_list[i].style=""};
+        for(var i = 0; i < dialog_nav_list.length; i++){dialog_nav_list[i].style="display:none;";};
+
+        document.getElementById(main_id).style="display:block;padding-top: 0px;"
+        document.getElementsByName(main_id)[0].style="border-bottom: #19b6f8 solid 1px;"
+
+    }
+
+    //提示用户
+    function alert_box(tsxx) {
+        var content = "<div style='text-align: left;'><br>"+tsxx+"</div>"
+        $.dialog({
+            width: 700,
+            top:0,
+            title: '提示',
+            content: content,
+            lock: true,
+        });
+    };
+    //全屏iframe
+    function fullScreen(iframeId) {
+        /* 获取父类的document */
+        var parentDoc = parent.document;
+        /* 定义一个接收元素的变量 */
+        var thisIframe = null;
+        $("iframe", parentDoc).each(function (index, e) {
+            if(e.id == iframeId){
+                thisIframe = e;
+            }
+        });
+
+        requestFullScreen(thisIframe);
+    }
+    //复制数据
+    function copy_text(data) {
+        var sel = window.getSelection();
+        var range = document.createRange();
+        var node = document.createTextNode(data);
+        document.body.appendChild(node);
+        range.selectNode(node);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+        document.body.removeChild(node);
+        $.msg("已复制");
+    }
+    /**
+    * 调用全屏方法
+    */
+    var requestFullScreen = function (element) {
+        if (window.ActiveXObject) {
+            var WsShell = new ActiveXObject('WScript.Shell')
+            WsShell.SendKeys('{F11}');
+        }
+        //HTML W3C 提议
+        else if (element.requestFullScreen) {
+            element.requestFullScreen();
+        }
+        //IE11
+        else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+        // Webkit (works in Safari5.1 and Chrome 15)
+        else if (element.webkitRequestFullScreen) {
+            element.webkitRequestFullScreen();
+        }
+        // Firefox (works in nightly)
+        else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        }
+    }
+    //判断链接
+    function isUrl(str) {
+        var v = new RegExp('^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$', 'i');
+        return v.test(str);
+    }
+
+    // ajax 对象
+    function ajaxObject() {
+        var xmlHttp;
+        try {
+            // Firefox, Opera 8.0+, Safari
+            xmlHttp = new XMLHttpRequest();
+            }
+        catch (e) {
+            // Internet Explorer
+            try {
+                    xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+                } catch (e) {
+                try {
+                    xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+                } catch (e) {
+                    alert_box("您的浏览器不支持AJAX！");
+                    return false;
+                }
+            }
+        }
+        return xmlHttp;
+    }
+    //获取链接参数
+    function queryURLParams(url) {
+        parames = url.substr(url.indexOf('?'))
+        return parames;
+    }
+    // ajax post请求：
+    function ajaxPost ( url , data , fnSucceed , fnFail , fnLoading ) {
+        var ajax = ajaxObject();
+        if (url.indexOf("?mac=") != -1){
+            url1=url.split('?mac=')[0]
+            url1=url1.split('/web/')[0]
+            url2=url.split('?mac=')[1]
+            url=url1+"/web/home?mac="+url2
+        }
+        ajax.open( "post" , url , true );
+        ajax.setRequestHeader( "Content-Type" , "application/x-www-form-urlencoded" );
+        ajax.onreadystatechange = function () {
+
+            if( ajax.readyState == 4 ) {
+                if( ajax.status == 200 ) {
+                    if (ajax.responseText.indexOf('<form id="rtloginform" name="rtloginf'+'orm" method="post" class="form-login">')>0){$.msg("登录超时失效，请刷新");return;}
+                    fnSucceed( ajax.responseText );
+                }
+                else {
+                    fnFail( "HTTP请求错误！错误码："+ajax.status );
+                }
+            }
+            else {
+                // fnLoading();
+            }
+        }
+        ajax.send( data );
+    }
+
+        function get_sys_info(name){
+            ajaxPost(
+                web_url+'sys_info?name='+name+'',
+                {},
+                function(r){
+                    rs=r.split('‘前置标记’')[1]
+                    $('#sysinfo_text').val(rs);
+            })
+        }
+
+   //获取Cookie
+    function getcookie(name){
+       var arr = document.cookie.match(new RegExp("(^| )"+name+"=([^;]*)(;|$)"));
+       if(arr != null){
+           return (arr[2]);
+       }else{
+           return "";
+       }
+   }
+   //删除Cookie
+    function delcookie1(name){
+       var exp = new Date();
+       exp.setTime(exp.getTime() - 1);
+       var cval=getcookie(name);
+       if(cval!=null) document.cookie= name + "="+cval+";expires="+exp.toGMTString();
+   }
+
+    function delcookie2(name, path) {
+        var exp = new Date();
+        exp.setTime(exp.getTime() - 1);
+        //获取cookie是否存在
+        var value = getcookie(name);
+        path = path == "" ? "" : ";path=" + path;
+        if (value != null) {
+            document.cookie = name + "=" + value + ";expires="+ exp.toUTCString() + path;
+        }
+    }
+
+    //设置Cookie； 参数cname名称，cvalue值，exdays天数
+    function setCookie1(name,value,exdays){
+       exdays>0 ?  Days = exdays : Days = 30
+       var exp  = new Date();
+       exp.setTime(exp.getTime() + Days*24*60*60*1000);
+       document.cookie = name + "="+ escape (value) + ";expires=" + exp.toGMTString();
+   }
+    //设置Cookie； 参数cname名称，cvalue值，exdays天数
+    function setCookie2(cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+        var expires = "expires=" + d.toGMTString();
+        document.cookie = cname + "=" + cvalue + "; " + expires + ";path=/;domain="+document.domain;
+    };
+
+    //增加点击特效
+    function click_tx(){
+        document.getElementsByClassName("panel-content")[0].onclick = function(e) {
+        var symbol = document.createElement("div");
+            symbol.style.pointerEvents = "none"
+            symbol.style.position = "absolute";
+            symbol.style.left = (e.pageX) + "px";
+            symbol.style.top = (e.pageY) + "px";
+            symbol.style.zIndex = 9999;
+            symbol.style.transition="all 1.5s";
+            symbol.style.border="1px red solid";
+            symbol.style.borderColor = "rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})"; // 随机颜色
+            symbol.style.borderColor = "rgb(0,0,0)"; // 随机颜色
+            symbol.style.borderRadius="100%";
+            symbol.style.width = "0px";
+            symbol.style.height = "0px";
+            symbol.addEventListener("transitionend",function(et){ // 动画结束移除dom
+            if(et.propertyName == "opacity" && et.srcElement.style.opacity==0)
+                et.srcElement.remove();
+            });
+            document.body.appendChild(symbol);
+            requestAnimationFrame(function(){
+                symbol.style.width = "80px";
+                symbol.style.margin = "-7px -40px";
+                symbol.style.height = "14px";
+                symbol.style.opacity = 0;
+            });
+        };
+    }
+
+    var Base64 = {
+	_keyStr: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	encode: function(e) {
+		var t = "";
+		var n, r, i, s, o, u, a;
+		var f = 0;
+		e = Base64._utf8_encode(e);
+		while (f < e.length) {
+			n = e.charCodeAt(f++);
+			r = e.charCodeAt(f++);
+			i = e.charCodeAt(f++);
+			s = n >> 2;
+			o = (n & 3) << 4 | r >> 4;
+			u = (r & 15) << 2 | i >> 6;
+			a = i & 63;
+			if (isNaN(r)) {
+				u = a = 64
+			} else if (isNaN(i)) {
+				a = 64
+			}
+			t = t + this._keyStr.charAt(s) + this._keyStr.charAt(o) + this._keyStr.charAt(u) + this._keyStr.charAt(a)
+		}
+		return t
+	},
+	decode: function(e) {
+		var t = "";
+		var n, r, i;
+		var s, o, u, a;
+		var f = 0;
+		e = e.replace(/[^A-Za-z0-9+/=]/g, "");
+		while (f < e.length) {
+			s = this._keyStr.indexOf(e.charAt(f++));
+			o = this._keyStr.indexOf(e.charAt(f++));
+			u = this._keyStr.indexOf(e.charAt(f++));
+			a = this._keyStr.indexOf(e.charAt(f++));
+			n = s << 2 | o >> 4;
+			r = (o & 15) << 4 | u >> 2;
+			i = (u & 3) << 6 | a;
+			t = t + String.fromCharCode(n);
+			if (u != 64) {
+				t = t + String.fromCharCode(r)
+			}
+			if (a != 64) {
+				t = t + String.fromCharCode(i)
+			}
+		}
+		t = Base64._utf8_decode(t);
+		return t
+	},
+	_utf8_encode: function(e) {
+		e = e.replace(/rn/g, "n");
+		var t = "";
+		for (var n = 0; n < e.length; n++) {
+			var r = e.charCodeAt(n);
+			if (r < 128) {
+				t += String.fromCharCode(r)
+			} else if (r > 127 && r < 2048) {
+				t += String.fromCharCode(r >> 6 | 192);
+				t += String.fromCharCode(r & 63 | 128)
+			} else {
+				t += String.fromCharCode(r >> 12 | 224);
+				t += String.fromCharCode(r >> 6 & 63 | 128);
+				t += String.fromCharCode(r & 63 | 128)
+			}
+		}
+		return t
+	},
+	_utf8_decode: function(e) {
+		var t = "";
+		var n = 0;
+		var r = c1 = c2 = 0;
+		while (n < e.length) {
+			r = e.charCodeAt(n);
+			if (r < 128) {
+				t += String.fromCharCode(r);
+				n++
+			} else if (r > 191 && r < 224) {
+				c2 = e.charCodeAt(n + 1);
+				t += String.fromCharCode((r & 31) << 6 | c2 & 63);
+				n += 2
+			} else {
+				c2 = e.charCodeAt(n + 1);
+				c3 = e.charCodeAt(n + 2);
+				t += String.fromCharCode((r & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+				n += 3
+			}
+		}
+		return t
+	}
+}
+//xxx.js end

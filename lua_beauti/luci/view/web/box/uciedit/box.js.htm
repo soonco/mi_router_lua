@@ -1,0 +1,45 @@
+    uci_strarr=[];
+    function search_click() {
+        ajaxPost('<%=REQUEST_URI%>?mac=uci_search', {},function(r){
+            if (r.indexOf("xiaoqiang") == -1) { alert("数据错误") }else{
+                uci_strarr=r.split("\n")
+                innerHTML="";x=0;
+                search_text=document.getElementsByName("search_text")[0].value
+                for (var i = 0; i < uci_strarr.length; i++) {
+                    strarr_uci=uci_strarr[i].split("=")
+                    if (strarr_uci.length==2 && uci_strarr[i].indexOf(search_text)!=-1){
+                        innerHTML=innerHTML+'<div name="search_res"><span class="search_res_path" >'+strarr_uci[0]+'</span><input name="search_res_text" type="text" value="'+strarr_uci[1]+'"></div>';
+                        x++
+                    }
+                    if (x==5){ break; }
+                }
+                innerHTML=innerHTML==""?"":innerHTML+'<input name="save_butt" type="submit" value="保存" onclick="save_butt_click()">'
+                document.getElementById("search_res_all").innerHTML=innerHTML
+            }
+        })
+    }
+
+    function search_change() {
+        innerHTML="";x=0;
+        search_text=document.getElementsByName("search_text")[0].value
+        for (var i = 0; i < uci_strarr.length; i++) {
+            strarr_uci=uci_strarr[i].split("=")
+            if (strarr_uci.length==2 && uci_strarr[i].indexOf(search_text)!=-1){
+                innerHTML=innerHTML+'<div name="search_res"><span class="search_res_path" >'+strarr_uci[0]+'</span><input name="search_res_text" type="text" value="'+strarr_uci[1]+'"></div>';
+                x++
+            }
+            if (x==5){ break; }
+        }
+                innerHTML=innerHTML==""?"":innerHTML+'<input name="save_butt" type="submit" value="保存" onclick="save_butt_click()">'
+        document.getElementById("search_res_all").innerHTML=innerHTML
+    }
+
+    function save_butt_click() {
+        search_res_dom=document.getElementsByName("search_res")
+        str=""
+        for (var i = 0; i < search_res_dom.length; i++) {
+            str=str+search_res_dom[i].querySelector("span").innerHTML+"="+search_res_dom[i].querySelector("input").value+"!@.@!"
+        }
+        str=btoa(encodeURIComponent(str))
+        ajaxPost('<%=REQUEST_URI%>?mac=uci_save&uci_text='+str, {},function(r){alert(r);search_click()})
+    }

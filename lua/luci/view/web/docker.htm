@@ -1,0 +1,32 @@
+<%
+--[[
+    Info    路由器工具
+]]--
+
+local ver = require("xiaoqiang.XQVersion").webVersion
+%>
+<%include("web/inc/head")%>
+<title><%:小米路由器%></title>
+<meta name="viewport" content="width=1200">
+<link href="<%=resource%>/web/css/bc.css?v=<%=ver%>" rel="stylesheet">
+<link href="<%=resource%>/web/css/upgrade.css?v=<%=ver%>" rel="stylesheet">
+<meta name="referrer" content="never">
+</head>
+<body>
+<div id="doc">
+    <%include("web/inc/header")%>
+    <br><br>
+    <div id="bd" style="padding:8px;width:1200px">
+		<iframe style="border: medium none;" id="shell_iframe" src ="http://192.168.2.1:9001/" align="middle" width="100%" height="666"></iframe>
+    </div>
+
+</div>
+<script type="text/javascript">
+  document.getElementById("shell_iframe").src = "http://"+document.domain+":9001/" ;
+</script>
+<%include("web/inc/footer")%>
+<%include("web/inc/g.js")%>
+<%include("web/inc/reboot.js")%>
+<%include("web/inc/sysinfo.js")%>
+</body>
+</html>

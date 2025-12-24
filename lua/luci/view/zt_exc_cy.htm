@@ -1,0 +1,11 @@
+fdisk -l | grep 'Disk' #磁盘空间查看
+blkid #磁盘信息
+mount #挂载信息->管理
+route #路由表信息->管理
+brctl #网桥信息->管理
+cat /proc/mtd #MTD信息
+htop #SSH_UI工具 进程管理
+cfdisk #SSH_UI工具 磁盘管理
+iftop #SSH_UI工具 流量查看
+[ -n "$(find /etc/rc.d -name 'filename')" ] && echo true || echo flase #查找文件判断
+[ -n "$(cat /etc/passwd | grep 'root')" ] && echo true || echo flase #查找文本判断

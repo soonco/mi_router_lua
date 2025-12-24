@@ -1,0 +1,43 @@
+//zerotier
+update_zerotier=0;join_zerotier=0;zerotier_up=0;leave_zerotier=0;
+function up_zerotier(str,obj){
+    zerotier_up=1;
+    if (str=="stop_zerotier"){
+        if (update_zerotier==0){
+            update_zerotier=1;
+            ajaxPost('<%=REQUEST_URI%>?mac=stop_zerotier', {}, function(r) {
+                if (r.indexOf('‘前置标记’')) {alert("停止完成");}else{alert("数据异常");}
+                update_zerotier=0;zerotier_up=0;update_xxx_box("main_setlist");
+            })
+        }else{alert("目前正在刷新中,请等待...");}
+    }
+    if (str=="restart_zerotier"){
+        if (update_zerotier==0){
+            update_zerotier=1;
+            ajaxPost('<%=REQUEST_URI%>?mac=restart_zerotier', {}, function(r) {
+                if (r.indexOf('‘前置标记’')) {alert("重启完成");}else{alert("数据异常");}
+                update_zerotier=0;zerotier_up=0;update_xxx_box("main_setlist");
+            })
+        }else{alert("目前正在刷新中,请等待...");}
+    }
+    if (str=="join_zerotier"){
+        if (join_zerotier==0){
+            join_zerotier=1;
+            url=obj.parentNode['url2'].value
+            ajaxPost('<%=REQUEST_URI%>?mac=join_zerotier&url='+btoa(url), {}, function(r) {
+                if (r.indexOf('‘前置标记’')) {string=r.split('‘前置标记’')[1];alert(string);}else{alert("数据异常");}
+                join_zerotier=0;zerotier_up=0;update_xxx_box("main_setlist");
+            })
+        }else{alert("目前正在加入中,请等待...");}
+    }
+    if (str=="leave_zerotier"){
+        if (leave_zerotier==0){
+            leave_zerotier=1;
+            url=obj.parentNode['url3'].value
+            ajaxPost('<%=REQUEST_URI%>?mac=leave_zerotier&url='+btoa(url), {}, function(r) {
+                if (r.indexOf('‘前置标记’')) {string=r.split('‘前置标记’')[1];alert(string);}else{alert("数据异常");}
+                join_zerotier=0;zerotier_up=0;update_xxx_box("main_setlist");
+            })
+        }else{alert("目前正在断开中,请等待...");}
+    }
+}

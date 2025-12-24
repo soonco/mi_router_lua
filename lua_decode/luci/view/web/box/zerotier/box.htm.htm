@@ -1,0 +1,18 @@
+<div id="zerotier_box">
+    <form action="#" onsubmit="return false;" method="post">
+        <p style="text-align: left;position: absolute;font-size: large;margin-left: 12px;">Zerotier设置：</p>
+        <div style="width:120px;display: inline-block;">Zerotier状态：</div>
+        <textarea wrap="off" disabled="disabled" name="url1" placeholder="网络不通，未连接。"><%=luci.sys.exec("source /etc/profile >/dev/null && zerotier-cli listnetworks")%></textarea>
+        <div style="display: inline-block;">
+                <input type="submit" value="停止" id="zerotier_sub1" onclick="up_zerotier('stop_zerotier',this)"><br>
+                <input type="submit" value="重启" id="zerotier_sub2" onclick="up_zerotier('restart_zerotier',this)">
+        </div>
+        <br>
+        <div style="width:120px;display: inline-block;">ZerotierID：</div>
+        <input type="text" name="url2"  value="" style="width:185px;">
+        <input type="submit" value="加入" id="zerotier_sub3" onclick="up_zerotier('join_zerotier',this)">
+        <div style="width:120px;display: inline-block;">ZerotierID：</div>
+        <input type="text" name="url3"  value="" style="width:185px;">
+        <input type="submit" value="断开" id="zerotier_sub4" onclick="up_zerotier('leave_zerotier',this)">
+    </form>
+</div>

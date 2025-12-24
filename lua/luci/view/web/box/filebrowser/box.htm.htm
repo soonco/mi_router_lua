@@ -1,0 +1,14 @@
+<div id="filebrowser_box">
+    <div>
+        <form action="#" onsubmit="return false;" method="post">
+            <p style="font-size: 16px;text-align: center;">当前状态：<%=luci.sys.exec("[ '$(uci set lyq.filebrowser)'='' && echo 免密登录 || echo 密码登录（默认用户密码：admin）")%></p>
+            <input type="submit" value="浏览" id="filebrowser_sub1" onclick="window.open('http://'+document.domain+':18888', '_blank');" style=""> -
+            <input type="submit" value="免密" id="filebrowser_sub2" onclick="filebrowser_butt_click(this)"> -
+            <input type="submit" value="加密" id="filebrowser_sub3" onclick="filebrowser_butt_click(this)"> -
+            <input type="submit" value="开启" id="filebrowser_start" onclick="filebrowser_butt_click(this)"> -
+            <input type="submit" value="重启" id="filebrowser_restart" onclick="filebrowser_butt_click(this)"> -
+            <input type="submit" value="关闭" id="filebrowser_stop" onclick="filebrowser_butt_click(this)">
+            <br>
+        </form>
+    </div>
+</div>

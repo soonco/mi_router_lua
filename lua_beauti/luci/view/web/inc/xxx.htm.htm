@@ -1,0 +1,597 @@
+<%local xxx_path = luci.sys.exec("echo -n $(uci get lyq.xxx_path)");if xxx_path=="" then  xxx_path="/data" end%>
+<script src="/js/jquery-1.8.3.js?v=0.0.3"></script>
+<style type="text/css">.YiJia_message{position:fixed;top:30px;left:50%;height:42px;line-height:42px;background:#fff;min-width:200px;color:#666;box-shadow:0 2px 4px rgb(0 0 0 / 12%),0 0 6px rgb(0 0 0 / 4%);z-index:99999999;border-radius:8px;overflow:hidden}.YiJia_message .YiJia_message_main{display:flex;color:#fff;font-size:14px;align-items:center;padding:0px 15px}.YiJia_message .YiJia_bg_default{background:#eee}.YiJia_message .YiJia_content{flex:1;padding-left:0px;text-align:center;color: #000;};.YiJia_message.messageFadeInDown{-webkit-animation-duration:.6s;animation-duration:.6s;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:messageFadeInDown;animation-name:messageFadeInDown}.YiJia_message.messageFadeOutUp{-webkit-animation-duration:.6s;animation-duration:.6s;-webkit-animation-fill-mode:both;animation-fill-mode:both;-webkit-animation-name:messageFadeOutUp;animation-name:messageFadeOutUp}@keyframes messageFadeOutUp{0%{opacity:1}100%{opacity:0;-webkit-transform:translateY(-100%);transform:translateY(-100%)}}@keyframes messageFadeInDown{0%{-webkit-transform:translate3d(0,-100%,0);transform:translate3d(0,-100%,0)}100%{-webkit-transform:none;transform:none}}</style>
+<script type="text/javascript">$.extend({msg:function(n){var e={type:"default",content:"提示内容",time:"2000",autoClose:!0,onClose:function(){},define:function(){}};"string"==typeof n&&(e.content=n),"object"==typeof n&&(e=$.extend({},e,n));let i=30;$(".header_tps").length>0&&(i=90);var t,o,a,s=`<div class="YiJia_message messageFadeInDown" style="top:${i}px">\n<div class="YiJia_message_main YiJia_bg_default">\n<div class="YiJia_content">${e.content}</div>\n</div>\n</div>`,d=$("body"),m=$(s);o=function(){m.addClass("messageFadeOutUp"),m.one("webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend",function(){a()})},a=function(){m.remove(),e.onClose(e),clearTimeout(t)},$(".YiJia_message").remove(),d.append(m),m.css({"margin-left":"-"+m.width()/2+"px"}),m.one("webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend",function(){m.removeClass("messageFadeInDown")}),e.autoClose&&(t=setTimeout(function(){o(),e.define()},e.time))}});msg='<%=luci.sys.exec("echo -n $("..xxx_path.."/xxxcon/xxxapi check)")%>';msg?$.msg(msg):'';</script>
+<style id="main_setlist_css" type="text/css">
+<!-- main_setlist_css_box_ajax_start -->
+<%
+    -- 加载css
+if luci.http.formvalue("xxx_web")=="1" then
+    xxx_web_arr = luci.sys.exec(xxx_path.."/xxxcon/xxxapi xxx_web css")
+    xxx_web_arr = string.split(xxx_web_arr, '\n')
+    for i = 1, #xxx_web_arr-1, 1 do
+        include(xxx_web_arr[i])
+    end
+end
+%>
+<!-- main_setlist_css_box_ajax_end -->
+</style>
+<script id="main_setlist_js" language="JavaScript" type="text/javascript">
+<!-- main_setlist_js_box_ajax_start -->
+<%
+    -- 加载js
+    xxx_web_arr = luci.sys.exec(xxx_path.."/xxxcon/xxxapi xxx_web js")
+    xxx_web_arr = string.split(xxx_web_arr, '\n')
+    for i = 1, #xxx_web_arr-1, 1 do
+        include(xxx_web_arr[i])
+    end
+%>
+<!-- main_setlist_js_box_ajax_end -->
+</script>
+<script type="text/tmpl" id="box_all">
+    <ul class="box_all_ul" id="box_all_ul">
+                        <li class="dialog_nav_li" name="main_nav"><button onclick="showfunc('main_nav')">导航</button></li>
+                        <li class="dialog_nav_li" name="main_setlist"><button onclick="showfunc('main_setlist')">功能</button></li>
+                        <li class="dialog_nav_li" name="main_authlist"><button onclick="showfunc('main_authlist')">登录</button></li>
+                        <%if luci.sys.exec("[ -n \"$(pidof xxx_ttyd)\" ] && echo -n terminal")=="terminal" then%>
+                            <li class="dialog_nav_li" name="main_cons" ><button onclick="showfunc('main_cons')">终端</button></li>
+                            <li class="dialog_nav_li" name="main_opkg"><button onclick="showfunc('main_opkg')">软件包</button></li>
+                        <%end%>
+                        <li class="dialog_nav_li" name="main_sysinfo"><button onclick="showfunc('main_sysinfo')">系统</button></li>
+                        <li class="dialog_nav_li" name="main_sysauto"><button onclick="showfunc('main_sysauto')">自启</button></li>
+                        <!--<li class="dialog_nav_li" name="main_diskauto"><button onclick="showfunc('main_diskauto')">硬盘</button></li>-->
+                        <li class="dialog_nav_li" name="main_net"><button onclick="showfunc('main_net')">网络</button></li>
+                        <li class="dialog_nav_li" name="main_firewall"><button onclick="showfunc('main_firewall')">防火墙</button></li>
+                        <li class="dialog_nav_li" name="main_automount"><button onclick="showfunc('main_automount')">挂载</button></li>
+                        <li class="dialog_nav_li" name="main_exec"><button onclick="showfunc('main_exec')">指令</button></li>
+                        <li class="dialog_nav_li" name="main_boxlist"><button onclick="showfunc('main_boxlist')">下载插件</button></li>
+    </ul>
+        <div id="box_html" style="margin-top: 10px;">
+            <!-- 主功能 -->
+            <div class="mod-set-nav mod-set-nav-pro" style="padding-top: 0px;" id="main_nav">
+            <p>常用工具箱 (绿色运行中，白色未运行，蓝色未知)</p><br>
+                <div class="clearfix li-6" id="dialog_box_ul" style="text-align: center;">
+                    <button onclick="openbox_edit('扩展功能-导航管理','box_edit_html','box_new','box',1)" info><span>导航管理</span></button>
+                </div>
+            <div style="color: #2673bf;padding-top: 30px;text-align: center;">
+            <a style="padding: 0px 15px;">用户：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getuserinfo")%></a>
+            <a style="padding: 0px 15px;">型号：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getmodel")%></a>
+            <a style="padding: 0px 15px;" id="xxx_mode_text">模式：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getxxxmode")%></a>
+            <a style="padding: 0px 15px;">版本：<%=luci.sys.exec(xxx_path.."/xxxcon/xxxbox getxxxver")%></a>
+            </div>
+            <br>
+            </div>
+            <!-- 第三方功能设置 -->
+            <div style="display:none;" id="main_setlist">
+<!-- main_setlist_box_ajax_start -->
+                <div id="dialog_sysopt">
+                    <div style="float: left;width: 409px;padding-right: 7px;">
+                        <button onclick="xxx_sys_1(this)" info>加载异常修复</button>&nbsp;
+                        <button onclick="xxx_sys_3(this)" info>路由系统重置</button>&nbsp;
+                        <button onclick="xxx_sys_4(this)" info>卸载已装软件</button>&nbsp;
+                        <button onclick="xxx_sys_5(this)" info>重启网络功能</button>&nbsp;
+                        <button onclick="xxx_sys_6(this)" info>重启路由系统</button>&nbsp;
+                    </div>
+                    <div class="dialog_sysopt2">
+                        <p class="xxx_title">选择隐藏项</p>
+                        <label><input type="checkbox" onclick="xxx_box_exec('xxx_checkbox_change','xxx_list_run_hide',this)" id="xxx_set_checkbox_run" <%=luci.sys.exec("uci get lyq.xxx_list_run_hide")%>> 运行中</label>&nbsp;&nbsp;
+                        <label><input type="checkbox" onclick="xxx_box_exec('xxx_checkbox_change','xxx_list_norun_hide',this)" id="xxx_set_checkbox_norun" <%=luci.sys.exec("uci get lyq.xxx_list_norun_hide")%>> 未运行</label>&nbsp;&nbsp;
+                        <label><input type="checkbox" onclick="xxx_box_exec('xxx_checkbox_change','xxx_list_unknown_hide',this)" id="xxx_set_checkbox_unknown" <%=luci.sys.exec("uci get lyq.xxx_list_unknown_hide")%>> 未知状态</label>&nbsp;&nbsp;<br>
+                        <label><input type="checkbox" onclick="xxx_box_exec('xxx_checkbox_change','xxx_notice_hide',this)" id="xxx_set_checkbox_unknown" <%=luci.sys.exec("uci get lyq.xxx_notice_hide")%>> 隐藏检查提醒</label>&nbsp;&nbsp;
+                    </div>
+                    <!--扩展模式
+                    <div class="dialog_sysopt2">
+                        <p class="xxx_title">扩展模式</p>
+                            <div onclick="if(window.confirm('内存模式仍在测试当中，建议不要使用')){xxx_box_exec('xxx_radio_change','ram',this);}">
+                                <input type="radio" name="xxx_mode_checkbox_radio" id="xxx_mode_checkbox_ram">
+                                <label for="radio_option1">内存模式</label>
+                            </div>
+                        <form>
+                            <div onclick="xxx_box_exec('xxx_radio_change','rom',this);">
+                                <input type="radio" name="xxx_mode_checkbox_radio" id="xxx_mode_checkbox_rom">
+                                <label for="radio_option2">磁盘模式</label>
+                            </div>
+                        </form>
+                    </div>
+                    -->
+                </div>
+                <%
+                -- 加载htm
+            if luci.http.formvalue("xxx_web")=="1" then
+                xxx_web_arr = luci.sys.exec(xxx_path.."/xxxcon/xxxapi xxx_web htm")
+                xxx_web_arr = string.split(xxx_web_arr, '\n')
+                for i = 1, #xxx_web_arr-1, 1 do
+                    luci.http.write("<p class='xxx_box_title'><i title='"..luci.sys.exec(xxx_path.."/xxxcon/xxxapi get_box_url "..string.split(xxx_web_arr[i],'/')[3]).."' onclick='if(this.title==\"\"){return};window.open(this.title.replace(\"{ip}\",document.domain))' style='cursor: pointer;'>"..luci.sys.exec(xxx_path.."/xxxcon/xxxapi get_box_name "..string.split(xxx_web_arr[i],'/')[3]).." - "..string.split(xxx_web_arr[i],'/')[3].."</i><i style='float: right;'>状态："..luci.sys.exec(xxx_path.."/xxxcon/xxxapi "..string.split(xxx_web_arr[i],'/')[3].." state").."</i></p>")
+                    luci.http.write("<div id=\"xxx_box_"..i.."\">")
+                    include(xxx_web_arr[i])
+                    luci.http.write("</div><br>")
+                end
+            else
+                luci.http.write("<p>&nbsp;<br>功能设置正在加载中...</p>")
+            end
+                %>
+                更多功能前往软件中心安装！
+<!-- main_setlist_box_ajax_end -->
+            </div>
+            <!-- 免密登录 -->
+            <div style="display:none;"  id="main_authlist">
+                <p>免密登录用户MAC名单</p><br>
+                <div id="dialog_mac">
+                    <div class="xxx_div">
+                        <button onclick="openbox_edit('免密用户-管理','mac_edit_html','mac_new','mac',2)" info>管理名单</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 控制台 -->
+            <div  style="display:none;" id="main_cons">
+                <iframe id="shell_iframe" allowtransparency="true" style="background-color=transparent" frameborder="0" width="750" height="400" scrolling="no"></iframe><br>
+                <button onclick="fullScreen('shell_iframe')" info>全屏</button>&nbsp;
+                <button onclick="window.open('https://www.coonote.com/shell/shell-tutorial.html')" info>指引</button>&nbsp;
+                <button onclick="show_exc_form('1','cy','命令')" info>命令</button>&nbsp;
+                <button onclick="show_exc_form('2','jb','脚本')" info>脚本</button>&nbsp;
+                <div style="width:750px;">
+                    <div id="exc_txt1_form" style="display:none">
+                        <p type="text" style="text-align: center;">常用命令<a name='exc_exc1'></a></p>
+                    </div>
+                    <div id="exc_txt2_form" style="display:none">
+                        <p type="text" style="text-align: center;">常用脚本<a name='exc_exc1'></a></p>
+                    </div>
+                </div>
+            </div>
+            <!-- OPKG -->
+            <div  style="display:none;" id="main_opkg">
+                <p>OPKG源地址</p><br>
+                <div id="dialog_opkg">
+                    <textarea wrap="on" id="opkg_text" class="xxx_textarea"><%=luci.sys.exec("cat /etc/opkg/distfeeds.conf")%></textarea><br><br>
+                    <button onclick="window.open('https://archive.openwrt.org/releases/18.06.0/packages/')" info>指引</button>&nbsp;
+                    <button onclick="$('#opkg_text').val($('#opkg_text').html())" info>还原</button>&nbsp;
+                    <button onclick="$('[name=\'xxx_base64\']').val(btoa(encodeURIComponent($('#opkg_text').val())));xxx_save(3);" info>保存</button>&nbsp;
+                    <button onclick="ssh_exec('opkg update')" info>更新列表</button>&nbsp;
+                    <button onclick="load_opkg_all_list()" info>加载所有软件包</button>&nbsp;
+                    <button onclick="load_opkg_list()" info>加载已安装软件</button>
+                    <div id="select" style="float: right;height: 34px;">
+                        <div class="ui-select-container ui-noselect">
+                            <select onchange="set_opkg_path(this)" class="ui-select-input ui-noselect">
+                                <option value="选择OPKG安装位置">选择OPKG安装位置</option>
+                                <%
+                                    issd = luci.sys.exec("echo $(/bin/df |/bin/grep /dev/sd >/dev/null && echo '1' || echo '0')")
+                                    if issd == "1\n" then
+                                %>
+                                <option value="sda">外部硬盘</option>
+                                <%
+                                    end
+                                %>
+                                <option value="tmp">临时安装（重启丢失）</option>
+                                <option value="mtd">设备空间（空间极小）</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="opkg_list_table">
+                    <div id="opkg_abcef">
+                    <button onclick="opkg_abcd(this)">A</button><button onclick="opkg_abcd(this)">B</button><button onclick="opkg_abcd(this)">C</button><button onclick="opkg_abcd(this)">D</button><button onclick="opkg_abcd(this)">E</button><button onclick="opkg_abcd(this)">F</button><button onclick="opkg_abcd(this)">G</button><button onclick="opkg_abcd(this)">H</button><button onclick="opkg_abcd(this)">I</button><button onclick="opkg_abcd(this)">J</button><button onclick="opkg_abcd(this)">K</button><button onclick="opkg_abcd(this)">L</button><button onclick="opkg_abcd(this)">M</button><button onclick="opkg_abcd(this)">N</button><button onclick="opkg_abcd(this)">O</button><button onclick="opkg_abcd(this)">P</button><button onclick="opkg_abcd(this)">Q</button><button onclick="opkg_abcd(this)">R</button><button onclick="opkg_abcd(this)">S</button><button onclick="opkg_abcd(this)">T</button><button onclick="opkg_abcd(this)">U</button><button onclick="opkg_abcd(this)">V</button><button onclick="opkg_abcd(this)">W</button><button onclick="opkg_abcd(this)">X</button><button onclick="opkg_abcd(this)">Y</button><button onclick="opkg_abcd(this)">Z</button>
+                    </div>
+                    <div class="ui-table-container ui-table-align-left">
+                        <div class="ui-table-thead" style="height: 46px;">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td>名称</td>
+                                        <td>版本</td>
+                                        <td>状态</td>
+                                        <td>操作</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="ui-table-tbody ui-table-hoverhighlight" style="max-height: 500px;">
+                            <table>
+                                <tbody id="opkg_tbody_html">
+                                        <tr data-index="0"><td style="align-text:center">未加载</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 系统信息 -->
+            <div  style="display:none;" id="main_sysinfo">
+                <p>当前系统正常运行：<%=luci.sys.exec("echo $(($((`date +%s`-`stat -c '%Z' /root`))/60/60/24))")%>天 <%=luci.sys.exec("echo $(($((`date +%s`-`stat -c '%Z' /root`))/60/60%24))")%>时  <%=luci.sys.exec("echo $(($((`date +%s`-`stat -c '%Z' /root`))/60%60))")%>分 </p><%=luci.sys.exec("uname -a")%><br>
+                <div style="width:700px;height: 360px;">
+                    <div style="height:170px; width:350px;float: left;">
+                        <canvas id="net_Chart"></canvas>
+                    </div>
+                    <div style="height:170px; width:350px;float: left;">
+                        <canvas id="cpu_Chart"></canvas>
+                    </div>
+                    <div style="height:140px; width:350px;float: left;">
+                        <canvas id="mem_Chart"></canvas>
+                    </div>
+                    <div style="height:140px; width:350px;float: left;">
+                        <canvas id="swap_Chart"></canvas>
+                    </div>
+                </div>
+                <div id="sysinfo_net_table">
+                    <div class="ui-table-container ui-table-align-left">
+                        <div class="ui-table-thead" style="height: 46px;">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td style="width: 105px;max-width: 105px;min-width: 105px;">地址</td>
+                                        <td>设备</td>
+                                        <td>接口</td>
+                                        <td>上传</td>
+                                        <td>下载</td>
+                                        <td>总上传</td>
+                                        <td>总下载
+                                            <span class="ui-table-arrow">
+                                                <i class="ui-table-sort-up" onclick="net_tbody_sort='^'"></i>
+                                                <i class="ui-table-sort-down" onclick="net_tbody_sort='v'"></i>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="ui-table-tbody ui-table-hoverhighlight">
+                            <table>
+                                <tbody id="net_tbody_html">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div id="dialog_sysinfo">
+                    <button onclick="get_sys_info('sys')" style="width:60px;margin: 3px;" info>系统</button>&nbsp;
+                    <button onclick="get_sys_info('cpu')" style="width:60px;margin: 3px;" info>CPU</button>&nbsp;
+                    <button onclick="get_sys_info('ram')" style="width:60px;margin: 3px;" info>内存</button>&nbsp;
+                    <button onclick="get_sys_info('df')" style="width:60px;margin: 3px;" info>磁盘</button>&nbsp;
+                    <button onclick="get_sys_info('cgroup')" style="width:60px;margin: 3px;" info>核心</button>&nbsp;
+                    <button onclick="get_sys_info('pro')" style="width:60px;margin: 3px;" info>进程</button>&nbsp;
+                    <button onclick="get_sys_info('ip')" style="width:60px;margin: 3px;" info>网络</button>&nbsp;
+                    <br><br>
+                    <textarea wrap="off" id="sysinfo_text" class="xxx_textarea"></textarea>
+                </div>
+            </div>
+            <!-- 开机自启 -->
+            <div  style="display:none;" id="main_sysauto">
+<!-- main_sysauto_box_ajax_start -->
+                <p>开机自启，系统启动时自动执行该命令</p><br>
+                <div id="dialog_rc">
+                    <textarea wrap="on" id="rc_text" class="xxx_textarea"><%=luci.sys.exec("cat "..xxx_path.."/xxxcon/user_auto.sh")%></textarea><br><br>
+                    <button onclick="$('#rc_text').val('');" info>清空</button>&nbsp;
+                    <button onclick="$('#rc_text').val($('#rc_text').text())" info>还原</button>&nbsp;
+                    <button onclick="$('[name=\'xxx_base64\']').val(btoa(encodeURIComponent($('#rc_text').val())));xxx_save(2);" info>保存</button>&nbsp;
+                    <button onclick="xxx_exec(4)" info>执行</button>&nbsp;
+                </div>
+<!-- main_sysauto_box_ajax_end -->
+            </div>
+            <!-- 硬盘自启 -->
+            <div  style="display:none;" id="main_diskauto">
+                <p>硬盘自启，硬盘挂载时自动执行该命令</p><br>
+                <div id="dialog_usb_disk">
+                    <textarea wrap="on" id="usb_disk_text" class="xxx_textarea"><%=luci.sys.exec("cat /mnt/docker_disk/auto_start.sh")%></textarea><br><br>
+                    <button onclick="$('#usb_disk_text').val('');" info>清空</button>&nbsp;
+                    <button onclick="$('#usb_disk_text').val($('#usb_disk_text').text())" info>还原</button>&nbsp;
+                    <button onclick="$('[name=\'xxx_base64\']').val(btoa(encodeURIComponent($('#usb_disk_text').val())));xxx_save(5);" info>保存</button>&nbsp;
+                    <button onclick="xxx_exec(3)" info>执行</button>&nbsp;
+                </div>
+            </div>
+            <!-- 自带挂载 -->
+            <div  style="display:none;" id="main_automount">
+                <p>自动挂载，开机自动挂载分区</p><br>
+                <div id="dialog_mount_disk">
+                    <textarea wrap="on" id="mount_disk_text" class="xxx_textarea"><%=luci.sys.exec("cat /etc/fstab")%></textarea><br><br>
+                    <button onclick="$('#mount_disk_text').val('');" info>清空</button>&nbsp;
+                    <button onclick="$('#mount_disk_text').val($('#mount_disk_text').text())" info>还原</button>&nbsp;
+                    <button onclick="$('[name=\'xxx_base64\']').val(btoa(encodeURIComponent($('#mount_disk_text').val())));xxx_save(4);" info>保存</button>&nbsp;
+                    <button onclick="xxx_exec(2)" info>生效</button>&nbsp;
+                </div>
+            </div>
+            <!-- 网络 -->
+            <div  style="display:none;" id="main_net">
+<!-- main_net_box_ajax_start -->
+                <div id="net_title" style="width: 90%;margin-left: 5%;">
+                <p class="xxx_title2" onclick="querynetdiv(this,'network')">有线和虚拟接口设置</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'wireless')">无线和关联网络设置</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'dhcp')">DHCP服务器设置</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'route')">系统路由表设置</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'netinfo')">路由表简单说明</p>
+                </div><br><br>
+                <hr style="margin: 5px;opacity: 0.15;">
+                <div id="dialog_network" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="network_tbody">
+                            <tr onclick="new_val(this,'network')" title="编辑" onmouseover="this.style.backgroundColor='#eee'" onmouseout="this.style.backgroundColor='#fff'">
+                                <th style="width:20%;text-align: center;"><div>名称</div></th>
+                                <th style="width:20%;text-align: center;"><div>地址</div></th>
+                                <th style="width:15%;text-align: center;"><div>接口</div></th>
+                                <th style="width:20%;text-align: center;"><div>MAC</div></th>
+                                <th style="width:10%;text-align: center;"><div>方式</div></th>
+                                <th style="width:15%;text-align: center;"><div>掩码</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                <form action="#" class="xxx_border" onsubmit="return box_net_form(this,'network');" id="network_form_new" method="post">
+                    <input type="text" name="network_cname" value="lan" style="width:80px;display:none;" readOnly="readOnly">
+                    名称：<input type="text" name="network_name" value="lanx" style="width:80px">
+                    地址：<input type="text" name="network_addr" placeholder="192.168.*.*" value="" style="width:100px">
+                    接口：<input type="text" name="network_ifname" placeholder="eth" value="" style="width:120px">
+                    <hr style="margin: 5px;opacity: 0.15;">
+                    MAC:<input type="text" name="network_macaddr" placeholder="00:00:00:00:00:00" style="width:150px">
+                    <input type="text" name="network_null" style="display:none;">
+                    掩码：<input type="text" name="network_netmask" value="255.255.255.0" style="width:100px">
+                    <!--
+                    用户:<input type="text" name="network_netmask" placeholder="username" style="width:100px">
+                    密码:<input type="text" name="network_netmask" placeholder="password" style="width:100px">
+                    -->
+                    <input type="submit" name="network_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="network_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+                <div id="dialog_wireless" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="wireless_tbody">
+                            <tr onclick="new_val(this,'wireless')" title="编辑" onmouseover="this.style.backgroundColor='#eee'" onmouseout="this.style.backgroundColor='#fff'">
+                                <th style="width:20%;text-align: center;"><div>名称</div></th>
+                                <th style="width:10%;text-align: center;"><div>设备</div></th>
+                                <th style="width:20%;text-align: center;"><div>接口</div></th>
+                                <th style="width:10%;text-align: center;"><div>网络</div></th>
+                                <th style="width:10%;text-align: center;"><div>模式</div></th>
+                                <th style="width:20%;text-align: center;"><div>SSID</div></th>
+                                <th style="width:10%;text-align: center;"><div>隐藏</div></th>
+                                <th style="display:none;"><div>密码</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                <form action="#" class="xxx_border" onsubmit="return box_net_form(this,'wireless');" id="wireless_form_new" method="post">
+                    <input type="text" name="wireless_cname" value="@wifi-iface[0]" style="width:80px;display:none;" readOnly="readOnly">
+                    名称：<input type="text" name="wireless_name" value="wifi_conf_name" style="width:120px">
+                    设备：<input type="text" name="wireless_device" value="lan" style="width:60px">
+                    接口：<input type="text" name="wireless_ifname" value="wifi0" style="width:40px">
+                    网络：<input type="text" name="wireless_network" value="lanx" style="width:40px">
+                    <hr style="margin: 5px;opacity: 0.15;">
+                    <input type="text" name="network_null" style="display:none;">
+                    SSID：<input type="text" name="wireless_ssid" placeholder="MWiFi_X" style="width:90px">
+                    隐藏：<input type="text" name="wireless_hidden" value="0" style="width:20px">
+                    密码：<input type="text" name="wireless_key" placeholder="password" style="width:80px">
+                    <input type="submit" name="wireless_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="wireless_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+
+                <div id="dialog_dhcp" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="dhcp_tbody">
+                            <tr onclick="new_val(this,'dhcp')" title="编辑" onmouseover="this.style.backgroundColor='#eee'" onmouseout="this.style.backgroundColor='#fff'">
+                                <th style="width:20%;text-align: center;"><div>名称</div></th>
+                                <th style="width:20%;text-align: center;"><div>接口</div></th>
+                                <th style="width:10%;text-align: center;"><div>起始IP</div></th>
+                                <th style="width:10%;text-align: center;"><div>结束IP</div></th>
+                                <th style="width:20%;text-align: center;"><div>有效期</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                <form action="#" class="xxx_border" onsubmit="return box_net_form(this,'dhcp');" id="dhcp_form_new" method="post">
+                    <input type="text" name="dhcp_cname" value="" style="width:80px;display:none;" readOnly="readOnly">
+                    名称：<input type="text" name="dhcp_name" value="lanx" style="width:98px">
+                    接口：<input type="text" name="dhcp_interface" value="lanx" style="width:90px">
+                    起始IP：<input type="text" name="dhcp_start" value="1" style="width:24px">
+                    结束IP：<input type="text" name="dhcp_limit" value="255" style="width:24px">
+                    有效期：<input type="text" name="dhcp_leasetime" value="12h" style="width:24px">
+                    <input type="submit" name="dhcp_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="dhcp_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+
+                <div id="dialog_route" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="route_tbody">
+                            <tr>
+                                <th style="width:20%;text-align: center;"><div>目标</div></th>
+                                <th style="width:20%;text-align: center;"><div>网关</div></th>
+                                <th style="width:20%;text-align: center;"><div>掩码</div></th>
+                                <th style="width:10%;text-align: center;"><div>状态</div></th>
+                                <th style="width:10%;text-align: center;"><div>跃点</div></th>
+                                <th style="width:20%;text-align: center;"><div>接口</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                <form action="#" class="xxx_border" onsubmit="return box_route_form(this);" id="route_form_new" method="post">
+                    <input type="text" name="route_cname" value="" style="width:18px;display:none;" readOnly="readOnly">
+                    目标：<input type="text" name="route_Destination" value="" style="width:98px">
+                    网关：<input type="text" name="route_Gateway" value="" style="width:98px">
+                    掩码：<input type="text" name="route_Genmask" value="255.255.255.0" style="width:98px">
+                    <input type="text" name="route_Flags" value="U" style="width:18px;display:none;">
+                    跃点：<input type="text" name="route_Metric" value="0" style="width:18px">
+                    <input type="text" name="route_interface" value="" style="width:78px;display:none;">
+                    <input type="text" name="route_name" value="" style="width:18px;display:none;">
+                    <input type="submit" name="route_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="route_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+
+                <div id="dialog_netinfo" style="text-align: left;">
+                    <textarea id="net_text" style="min-width: 98%;min-height: 100px;overflow: auto;"></textarea>
+                </div>
+<!-- main_net_box_ajax_end -->
+            </div>
+            <!-- 防火墙 -->
+            <hr style="margin: 5px;opacity: 0.15;">
+            <div style="display:none;" id="main_firewall">
+                <div id="fir_title" style="width: 90%;margin-left: 5%;">
+                <p class="xxx_title2" onclick="querynetdiv(this,'firewall_zone')">防火墙区域</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'firewall_rule')">防火墙规则</p>
+                <p class="xxx_title2" onclick="querynetdiv(this,'firewall_info')">防火墙说明</p>
+                </div><br><br>
+                <div id="dialog_firewall_zone" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="firewall_zone_tbody">
+                            <tr onclick="new_val(this,'firewall_zone')" title="编辑" onmouseover="this.style.backgroundColor='#eee'" onmouseout="this.style.backgroundColor='#fff'">
+                                <th style="width:25%;text-align: center;"><div>名称</div></th>
+                                <th style="width:10%;text-align: center;"><div>标题</div></th>
+                                <th style="width:15%;text-align: center;"><div>入站</div></th>
+                                <th style="width:15%;text-align: center;"><div>出站</div></th>
+                                <th style="width:15%;text-align: center;"><div>转发</div></th>
+                                <th style="width:20%;text-align: center;"><div>涵盖网络</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                <br>
+                <form action="#" class="xxx_border" onsubmit="return box_net_form(this,'firewall_zone');" id="firewall_zone_form_new" method="post">
+                    <input type="text" name="firewall_zone_cname" value="" style="width:80px;display:none;" readOnly="readOnly">
+                    名称：<input type="text" name="firewall_zone_name" value="" style="width:70px">
+                    标题：<input type="text" name="firewall_zone_title" value="" style="width:70px">
+                    入站：<input type="text" name="firewall_zone_input" placeholder="ACCEPT" value="" style="width:60px">
+                    出站：<input type="text" name="firewall_zone_output" placeholder="ACCEPT" value="" style="width:60px">
+                    转发：<input type="text" name="firewall_zone_forward" placeholder="ACCEPT" value="" style="width:60px">
+                    <hr style="margin: 5px;opacity: 0.15;">
+                    涵盖网络：<input type="text" name="firewall_zone_network" placeholder="wan" value="" style="width:200px">
+                    <input type="submit" name="firewall_zone_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="firewall_zone_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+                <div id="dialog_firewall_rule" style="width: 100%;" class="xxx_border">
+                    <table border="1" style="margin: auto;width: 100%;" align="center" class="xxx_border">
+                        <tbody id="firewall_rule_tbody">
+                            <tr onclick="new_val(this,'firewall_rule')" title="编辑" onmouseover="this.style.backgroundColor='#eee'" onmouseout="this.style.backgroundColor='#fff'">
+                                <th style="width:10%;text-align: center;"><div>名称</div></th>
+                                <th style="width:10%;text-align: center;"><div>标题</div></th>
+                                <th style="width:10%;text-align: center;"><div>IP类型</div></th>
+                                <th style="width:10%;text-align: center;"><div>源区域</div></th>
+                                <th style="width:15%;text-align: center;"><div>源端口</div></th>
+                                <th style="width:10%;text-align: center;"><div>协议</div></th>
+                                <th style="width:10%;text-align: center;"><div>目标区域</div></th>
+                                <th style="width:15%;text-align: center;"><div>目标端口</div></th>
+                                <th style="width:10%;text-align: center;"><div>动作</div></th>
+                            </tr>
+                        </tbody>
+                    </table>
+                <br>
+                <form action="#" class="xxx_border" onsubmit="return box_net_form(this,'firewall_rule');" id="firewall_rule_form_new" method="post">
+                    <input type="text" name="firewall_rule_cname" value="" style="width:80px;display:none;" readOnly="readOnly">
+                    名称：<input type="text" name="firewall_rule_name" value="" style="width:98px">
+                    标题：<input type="text" name="firewall_rule_title" value="lanx" style="width:70px">
+                    IP类型：<input type="text" name="firewall_rule_family" value="ipv4" style="width:50px">
+                    源区域：<input type="text" name="firewall_rule_src" value="wan" style="width:60px">
+                    源端口：<input type="text" name="firewall_rule_src_port" value="555" style="width:80px">
+                    <hr style="margin: 5px;opacity: 0.15;">
+                    协议：<input type="text" name="firewall_rule_proto" value="udp" style="width:50px">
+                    目标区域：<input type="text" name="firewall_rule_dest" value="lan" style="width:60px">
+                    目标端口：<input type="text" name="firewall_rule_dest_port" value="666" style="width:80px">
+                    动作：<input type="text" name="firewall_rule_target" value="ACCEPT" style="width:60px">
+                    <input type="submit" name="firewall_rule_save" onclick="buttonsub=this.value" style="width:30px;display:none;" value="保存">
+                    <input type="submit" name="firewall_rule_sub" onclick="buttonsub=this.value" style="width:30px;" value="新增">
+                </form><br>
+                </div>
+
+                <div id="dialog_firewall_info" style="text-align: left;">
+                    <textarea id="firewall_text" style="min-width: 98%;min-height: 500px;overflow: auto;"></textarea>
+                </div>
+            </div>
+            <!-- 指令控制 -->
+            <div  style="display:none;" id="main_exec">
+                <p class="xxx_dialog_div">微信指令(微信发送指令即可执行命令并回复结果)</p>
+                <div id="dialog_wxexc"><br>
+                    <div class="xxx_div">
+                        <button onclick="openbox_edit('命令-管理','wxexc_edit_html','wxexc_new','wxexc',4)" info>管理</button>
+                        <button onclick="wxexc_wxskadi2()" info>生效</button>
+                    </div>
+                </div><br>
+                <p class="xxx_dialog_div">常用命令(点击按钮即可立即执行命令并弹出结果)</p>
+                <div id="dialog_exc"><br>
+                    <div class="xxx_div">
+                        <button onclick="openbox_edit('指令-管理','exc_edit_html','exc_new','exc',3)" info>管理</button>
+                    </div>
+                </div><br>
+            </div>
+            <!-- 软件中心 -->
+            <div style="display:none;" id="main_boxlist">
+                    <div id="box_title" class="xxx_title" style="margin-top: 0px;">资源正在加载中...<br><br><br><div style="margin-left: 300px;width: 120px;height: 120px;" class="ui-loading-ring"></div></div>
+                    <!--
+                    <div>
+                        <div id="search" style="float: left; margin-left: 20px;">
+                                插件查找：<input readonly="readonly" type="text" name="hert" value="mac" style="width:150px;">
+                                <input type="submit" onclick="" style="width:60px" value="确定">
+                        </div>
+                        <div id="select" style="float: right; margin-right: 20px;">
+                            <div class="ui-select-container ui-noselect">
+                                插件列表：
+                                <select onchange="set_box_list(this)" title="这会筛选因空间和依赖不足的插件无法安装！" class="ui-select-input ui-noselect">
+                                    <option value="">全部插件</option>
+                                    <option value="">可用插件</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    -->
+                    <div id="xxx_box">
+                    <table border="1" class="new_xxx_box_table" align="center">
+                        <tbody>
+                        </tbody>
+                    </table>
+                    </div>
+                    <div id="disk_info" style="text-align: center;"></div>
+            </div>
+        </div>
+</script>
+<script type="text/tmpl" id="box_edit_html">
+        <div class="mod-set-nav mod-set-nav-pro" style="padding-top: 0px;" id="dialog_box_edit">
+            <form action="#" onsubmit="return box_form();" id="box_new" method="post">
+                <input type="text" name="title" style="display:none;">
+                <input type="text" name="time" style="display:none;">
+                名称：<input type="text" name="name" value="" style="width:70px">&nbsp;
+                <input type="text" name="class" value="box" style="display:none;">
+                ：<input type="text" name="data" value="" style="width:200px">&nbsp;
+                ：<input type="text" name="tag" value="0" style="width:70px">
+                <input type="submit" onclick="box_form_new_xxx('box_new','box')" value="新增">
+            </form>
+        </div>
+    <p>简介：扩展功能，自行添加，名称最多8个字符，无需其他设置。</p>
+</script>
+
+<script type="text/tmpl" id="mac_edit_html">
+        <div class="mod-set-nav mod-set-nav-pro" style="padding-top: 0px;" id="mac_new"></div>
+    <p>简介：白名单开启后无需密码直接登录，无需其他设置。</p>
+</script>
+
+<script type="text/tmpl" id="exc_edit_html">
+        <div class="mod-set-nav mod-set-nav-pro" style="padding-top: 0px;" id="dialog_exc_edit">
+            <form action="#" onsubmit="return box_form();" id="exc_new" method="post">
+                <input type="text" name="title" style="display:none;">
+                <input type="text" name="time" style="display:none;">
+                名称：<input type="text" name="name" value="" style="width:70px">&nbsp;
+                <input type="text" name="class" value="exc" style="display:none;">
+                ：<input type="text" name="data" value="" style="width:200px">&nbsp;
+                ：<input type="text" name="tag" value="/root/" style="width:70px">
+                <input type="submit" onclick="box_form_new_xxx('exc_new','exc')" value="新增">
+            </form>
+        </div>
+    <p>简介：常用指令，自行添加，名称最多12个字符，无需其他设置。</p>
+</script>
+
+<script type="text/tmpl" id="wxexc_edit_html">
+        <div class="mod-set-nav mod-set-nav-pro" style="padding-top: 0px;" id="dialog_wxexc_edit">
+            <form action="#" onsubmit="return box_form();" id="wxexc_new" method="post">
+                <input type="text" name="title" style="display:none;">
+                <input type="text" name="time" style="display:none;">
+                名称：<input type="text" name="name" value="" style="width:70px">&nbsp;
+                <input type="text" name="class" value="wxexc" style="display:none;">
+                ：<input type="text" name="data" value="" style="width:200px">&nbsp;
+                ：<input type="text" name="tag" value="/root/" style="width:70px">
+                <input type="submit" onclick="box_form_new_xxx('wxexc_new','wxexc')" value="新增">
+            </form>
+        </div>
+    <p>简介：%s为变量，名称最多12个字符，名称为白名单则表示可以直接使用该命令。</p>
+</script>
+<form action="#" style="display:none;" name="xxx" id="xxx" method="post"><input type="text" name="xxx_base64" value=""><input type="text" name="xxx_sha" value=""></form>

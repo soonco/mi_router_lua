@@ -1,0 +1,37 @@
+    update=0;
+    function filebrowser_butt_click(obj){
+        if (update==0){
+            update=1;
+            if (obj.value=="加密"){
+                ajaxPost('<%=REQUEST_URI%>?mac=filebrowser_lock', {},function(r){
+                    update_xxx_box("main_setlist");
+                    alert(r);
+                    update=0;
+                })
+            }else if (obj.value=="免密"){
+                ajaxPost('<%=REQUEST_URI%>?mac=filebrowser_unlock', {},function(r){
+                    update_xxx_box("main_setlist");
+                    alert(r);
+                    update=0;
+                })
+            }else if(obj.value=="开启"){
+                ajaxPost('<%=REQUEST_URI%>?mac=filebrowser_start', {},function(r){
+                    update_xxx_box("main_setlist");
+                    alert(r);
+                    update=0;
+                })
+            }else if(obj.value=="重启"){
+                ajaxPost('<%=REQUEST_URI%>?mac=filebrowser_restart', {},function(r){
+                    update_xxx_box("main_setlist");
+                    alert(r);
+                    update=0;
+                })
+            }else if(obj.value=="关闭"){
+                ajaxPost('<%=REQUEST_URI%>?mac=filebrowser_stop', {},function(r){
+                    update_xxx_box("main_setlist");
+                    alert(r);
+                    update=0;
+                })
+            }
+        }else{alert("繁忙中,请等待...");}
+    }

@@ -1,0 +1,48 @@
+    config_bak_update=0;config_bak_box_id="";config_bak_index=0;config_bak_names=[];interval=0;
+    function butt_click(obj){
+        config_bak_names=[];interval=0;
+        config_bak_box_id="config_bak";
+        if (obj.id.indexOf("all")!=-1){
+            if (obj.id.indexOf("bak")!=-1){
+                sel=document.getElementById("bak_box")
+                for (var i = 0; i < sel.length; i++) {
+                    config_bak_names.push(sel.options[i].value)
+                }
+            }else{
+                sel=document.getElementById("rec_box")
+                for (var i = 0; i < sel.length; i++) {
+                    config_bak_names.push(sel.options[i].value)
+                }
+            }
+        }else{
+            if (obj.id.indexOf("bak")!=-1){
+                sel=document.getElementById("bak_box")
+                config_bak_names=[sel.options[sel.selectedIndex].value]
+            }else{
+                sel=document.getElementById("rec_box")
+                config_bak_names=[sel.options[sel.selectedIndex].value]
+            }
+        }
+        if (config_bak_names[0]==""){return;}
+        config_bak_index=0;
+        document.getElementById(config_bak_box_id).innerHTML="<a style='font-size:18px'>正在准备开始中...</a><br><br>"
+        interval = window.setInterval("xxxbak_call('"+obj.id+"','"+obj.value+"')","1000");
+    }
+
+    function xxxbak_call(exec,value){
+        if (config_bak_update==0){
+            config_bak_update=1
+            if (config_bak_names.length <= config_bak_index){config_bak_update=0;window.clearInterval(interval);update_xxx_box("main_setlist");return;}
+            z=" ["+(config_bak_index+1)+"/"+config_bak_names.length+"] "
+            if (config_bak_index>999999999999999){document.getElementById(config_bak_box_id).innerHTML="<a style='font-size:18px'>正在取消中...</a><br><br>";return};
+            document.getElementById(config_bak_box_id).innerHTML="<a style='font-size:18px'>正在"+value+z+config_bak_names[config_bak_index]+" 中...</a> <a style='font-size:18px' href=\"Javascript:index=99999999999999999;xxxbak_call()\">取消</a><br><br>"
+            ajaxPost('<%=REQUEST_URI%>?mac='+exec+'&name='+btoa(encodeURIComponent(config_bak_names[config_bak_index])), {}, function(r) {
+                if (r.indexOf(config_bak_names[config_bak_index]+" 完成")==-1){config_bak_index=99999999999999999}
+                config_bak_index++;
+                config_bak_update=0
+            })
+        }else{
+            return;
+        }
+
+    }

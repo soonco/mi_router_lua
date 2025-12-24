@@ -1,0 +1,12 @@
+//wol
+update_wol=0;wol_up=0;
+function up_wol(obj){
+    wol_up=1;
+    if (update_wol==0){
+        update_wol=1;
+        ajaxPost('<%=REQUEST_URI%>?mac='+obj.id+"&wol_text=" +btoa(encodeURIComponent(document.getElementById("wol_text").value)), {}, function(r) {
+            if (r.indexOf('‘前置标记’')) {alert("完成");}else{alert("数据异常");}
+            update_wol=0;wol_up=0;update_xxx_box("main_setlist");
+        })
+    }else{alert("目前正在刷新中,请等待...");}
+}
