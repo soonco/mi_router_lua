@@ -165,7 +165,7 @@ var ModelDhcpband = (function(){
             }
             return repeat;
         },
-         = function( callback ){
+        getList = function( callback ){
             $.getJSON('<%=luci.dispatcher.build_url("api", "xqnetwork","macbind_info")%>',{},function(rsp){
                 if ( rsp.code != 0 ) {
                     return;
